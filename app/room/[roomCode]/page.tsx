@@ -54,13 +54,37 @@ export default function RoomPage() {
   const [scorePopups, setScorePopups] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
+const [lastPhase, setLastPhase] = useState<string | null>(null);
 
   const isHost = Boolean(uid && room?.hostId === uid);
+function playSound(file: string) {
+  const audio = new Audio(`/sounds/${file}`);
+  audio.volume = 0.5;
+  audio.play().catch(() => {});
+}
 
   useEffect(() => {
     const savedName = localStorage.getItem("name");
     if (savedName) setName(savedName);
   }, []);
+useEffect(() => {
+  if (room?.phase === "reveal" && lastPhase !== "reveal") {
+    playSound("reveal.mp3");
+    setLastPhase("reveal");
+  }
+
+  if (room?.phase === "question") {
+    setLastPhase("question");
+  }
+}, [room?.phase]);
+const [gameEnded, setGameEnded] = useState(false);
+
+useEffect(() => {
+  if (room?.status === "ended" && !gameEnded) {
+    playSound("game-over.mp3");
+    setGameEnded(true);
+  }
+}, [room?.status]);
 
   useEffect(() => {
     if (auth.currentUser) {
@@ -297,10 +321,11 @@ export default function RoomPage() {
     const correct = isCorrectAnswer(answer, room.currentQuestion);
 
     if (!correct) {
-      setAnswer("");
-      setFeedback("Wrong answer, try again");
-      return;
-    }
+  playSound("wrong.mp3");
+  setAnswer("");
+  setFeedback("Wrong answer, try again");
+  return;
+}
 
     const currentScore = room.players?.[uid]?.score || 0;
 
@@ -321,6 +346,7 @@ export default function RoomPage() {
 
     setFeedback("");
     setAnswer("");
+playSound("correct.mp3");
   }
 
   if (room === undefined) {
