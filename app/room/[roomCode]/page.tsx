@@ -536,12 +536,15 @@ useEffect(() => {
 
             {feedback && <p style={styles.feedback}>{feedback}</p>}
 
-            <button
-              onClick={submitAnswer}
-              disabled={room.phase === "reveal" || timeLeft === 0 || !!alreadyAnswered}
-              style={styles.button}
-            >
-              Submit
+         <button
+  onClick={() => {
+    playSound("correct");
+    console.log("PLAYING SOUND");
+  }}
+  style={styles.button}
+>
+  TEST SOUND
+</button>
             </button>
           </div>
         )}
