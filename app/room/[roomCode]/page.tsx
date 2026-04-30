@@ -205,13 +205,15 @@ export default function RoomPage() {
     }
 
     const currentScore = room.players?.[uid]?.score || 0;
+const earnedPoints = Math.max(1, Math.ceil(timeLeft / 5));
 
     await update(ref(db, `rooms/${roomCode}`), {
-      [`players/${uid}/score`]: currentScore + 1,
+      [[`players/${uid}/score`]: currentScore + Math.max(1, Math.ceil(timeLeft / 5)),
       [`roundAnswers/${questionKey}/${uid}`]: true,
     });
 
-    alert("Correct! +1 point");
+    const earnedPoints = Math.max(1, Math.ceil(timeLeft / 5));
+alert(`Correct! +${earnedPoints} points`);
     setAnswer("");
   }
 
