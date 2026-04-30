@@ -47,6 +47,7 @@ export default function RoomPage() {
   const [uid, setUid] = useState("");
   const [name, setName] = useState("");
   const [answer, setAnswer] = useState("");
+const [feedback, setFeedback] = useState("");
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
 
@@ -224,13 +225,11 @@ if (room.phase === "reveal") return;
 
     const correct = isCorrectAnswer(answer, room.currentQuestion);
 
-    if (!correct) {
-      alert("Wrong answer");
-      await update(ref(db, `rooms/${roomCode}/roundAnswers/${questionKey}`), {
-        [uid]: true,
-      });
-      return;
-    }
+if (!correct) {
+  setAnswer("");
+  setFeedback("Wrong answer, try again");
+  return;
+}
 
     const currentScore = room.players?.[uid]?.score || 0;
 
@@ -246,9 +245,9 @@ if (room.phase === "reveal") return;
       [`players/${uid}/score`]: currentScore + earnedPoints,
       [`roundAnswers/${questionKey}/${uid}`]: true,
     });
+setFeedback(`✅ Correct! +${earnedPoints} pts`);
 
-    alert(`Correct! timeLeft=${timeLeft}, remaining=${remaining}, earned=${earnedPoints}`);
-    setAnswer("");
+      setAnswer("");
   }
 
   if (room === undefined) {
@@ -343,6 +342,9 @@ if (room.phase === "reveal") return;
               disabled={room.phase === "reveal" || timeLeft === 0 || !!alreadyAnswered}
               style={styles.input}
             />
+{feedback && (
+  <p style={{ color: "#f87171", marginTop: 10 }}>{feedback}</p>
+)}
 
             <button
               onClick={submitAnswer}
