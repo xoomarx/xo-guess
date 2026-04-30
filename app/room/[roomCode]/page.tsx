@@ -59,6 +59,13 @@ const [lastPhase, setLastPhase] = useState<string | null>(null);
   const isHost = Boolean(uid && room?.hostId === uid);
 function playSound(file: string) {
   const audio = new Audio(`/sounds/${file}`);
+  audio.volume = 0.6;
+  audio.play().catch((error) => {
+    console.log("Sound failed:", error);
+  });
+}
+function playSound(file: string) {
+  const audio = new Audio(`/sounds/${file}`);
   audio.volume = 0.5;
   audio.play().catch(() => {});
 }
@@ -321,6 +328,7 @@ useEffect(() => {
     const correct = isCorrectAnswer(answer, room.currentQuestion);
 
     if (!correct) {
+  if (!correct) {
   playSound("wrong.mp3");
   setAnswer("");
   setFeedback("Wrong answer, try again");
