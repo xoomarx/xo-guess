@@ -54,17 +54,19 @@ export default function RoomPage() {
   const [scorePopups, setScorePopups] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
+const [soundEnabled, setSoundEnabled] = useState(false);
 const [lastPhase, setLastPhase] = useState<string | null>(null);
 
   const isHost = Boolean(uid && room?.hostId === uid);
 function playSound(file: string) {
+  if (!soundEnabled) return;
+
   const audio = new Audio(`/sounds/${file}`);
   audio.volume = 0.6;
   audio.play().catch((error) => {
     console.log("Sound failed:", error);
   });
 }
-
   useEffect(() => {
     const savedName = localStorage.getItem("name");
     if (savedName) setName(savedName);
@@ -347,7 +349,7 @@ useEffect(() => {
       },
     });
 
-    splaySound("correct.mp3");
+    playSound("correct.mp3");
 setFeedback("");
 setAnswer("");
   }
@@ -410,6 +412,19 @@ setAnswer("");
           style={styles.secondaryButton}
         >
           Copy invite link
+<button
+  onClick={() => {
+    const audio = new Audio("/sounds/correct.mp3");
+    audio.volume = 0.2;
+
+    audio.play().then(() => {
+      setSoundEnabled(true);
+    });
+  }}
+  style={styles.secondaryButton}
+>
+  {soundEnabled ? "Sound enabled" : "Enable sound"}
+</button>
         </button>
 
         {room.status !== "playing" && room.status !== "ended" && (
