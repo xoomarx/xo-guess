@@ -88,34 +88,33 @@ export default function RoomPage() {
     return () => unsubscribe();
   }, []);
 
-  uuseEffect(() => {
-  if (room?.status !== "playing" || !room.roundStartedAt) return;
+  useEffect(() => {
+    if (room?.status !== "playing" || !room.roundStartedAt) return;
 
-  const interval = setInterval(() => {
-    const serverNow = Date.now() + serverOffset;
-    const elapsed = Math.floor((serverNow - room.roundStartedAt!) / 1000);
-    const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
+    const interval = setInterval(() => {
+      const serverNow = Date.now() + serverOffset;
+      const elapsed = Math.floor((serverNow - room.roundStartedAt!) / 1000);
+      const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
 
-    setTimeLeft(remaining);
+      setTimeLeft(remaining);
 
-    if (remaining === 0 && isHost) {
-      clearInterval(interval);
+      if (remaining === 0 && isHost) {
+        clearInterval(interval);
 
-      setTimeout(() => {
-        nextQuestion();
-      }, 2500);
-    }
-  }, 300);
+        setTimeout(() => {
+          nextQuestion();
+        }, 2500);
+      }
+    }, 300);
 
-  return () => clearInterval(interval);
-}, [
-  room?.status,
-  room?.roundStartedAt,
-  room?.questionIndex,
-  serverOffset,
-  isHost,
-]);
-  
+    return () => clearInterval(interval);
+  }, [
+    room?.status,
+    room?.roundStartedAt,
+    room?.questionIndex,
+    serverOffset,
+    isHost,
+  ]);
 
   async function joinRoom() {
     if (!uid) return;
@@ -205,18 +204,22 @@ export default function RoomPage() {
     }
 
     const currentScore = room.players?.[uid]?.score || 0;
-const earnedPoints =
-  timeLeft >= 11 ? 3 :
-  timeLeft >= 6 ? 2 :
-  1;
 
-await update(ref(db, `rooms/${roomCode}`), {
-  [`players/${uid}/score`]: currentScore + earnedPoints,
-  [`roundAnswers/${questionKey}/${uid}`]: true,
-});
+    const serverNow = Date.now() + serverOffset;
+    const elapsed = Math.floor(
+      (serverNow - (room.roundStartedAt || serverNow)) / 1000
+    );
+    const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
 
-alert(`Correct! +${earnedPoints} points`);
-setAnswer("");
+    const earnedPoints = remaining >= 11 ? 3 : remaining >= 6 ? 2 : 1;
+
+    await update(ref(db, `rooms/${roomCode}`), {
+      [`players/${uid}/score`]: currentScore + earnedPoints,
+      [`roundAnswers/${questionKey}/${uid}`]: true,
+    });
+
+    alert(`Correct! +${earnedPoints} points`);
+    setAnswer("");
   }
 
   if (room === undefined) {
@@ -279,7 +282,10 @@ setAnswer("");
           <div style={styles.section}>
             <div style={styles.topRow}>
               <div>
-                <h2>Round {room.roundNumber || 1} / {room.totalRounds || TOTAL_ROUNDS}</h2>
+                <h2>
+                  Round {room.roundNumber || 1} /{" "}
+                  {room.totalRounds || TOTAL_ROUNDS}
+                </h2>
                 <p>Guess the {room.currentQuestion.type}</p>
               </div>
 
