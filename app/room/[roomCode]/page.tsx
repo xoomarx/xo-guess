@@ -88,31 +88,34 @@ export default function RoomPage() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (room?.status !== "playing" || !room.roundStartedAt) return;
+  uuseEffect(() => {
+  if (room?.status !== "playing" || !room.roundStartedAt) return;
 
-    const interval = setInterval(() => {
-      const serverNow = Date.now() + serverOffset;
-      const elapsed = Math.floor((serverNow - room.roundStartedAt!) / 1000);
-      const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
+  const interval = setInterval(() => {
+    const serverNow = Date.now() + serverOffset;
+    const elapsed = Math.floor((serverNow - room.roundStartedAt!) / 1000);
+    const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
 
-      setTimeLeft(remaining);
-    }, 300);
+    setTimeLeft(remaining);
 
-    return () => clearInterval(interval);
-  }, [room?.status, room?.roundStartedAt, serverOffset]);
+    if (remaining === 0 && isHost) {
+      clearInterval(interval);
 
-  useEffect(() => {
-    if (!isHost) return;
-    if (room?.status !== "playing") return;
-    if (timeLeft !== 0) return;
+      setTimeout(() => {
+        nextQuestion();
+      }, 2500);
+    }
+  }, 300);
 
-    const timeout = setTimeout(() => {
-      nextQuestion();
-    }, 2500);
-
-    return () => clearTimeout(timeout);
-  }, [timeLeft, isHost, room?.status, room?.questionIndex]);
+  return () => clearInterval(interval);
+}, [
+  room?.status,
+  room?.roundStartedAt,
+  room?.questionIndex,
+  serverOffset,
+  isHost,
+]);
+  
 
   async function joinRoom() {
     if (!uid) return;
