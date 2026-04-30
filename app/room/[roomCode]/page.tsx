@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import { useParams } from "next/navigation";
-import { onValue, ref, update } from "firebase/database";
+import { onValue, ref, update, serverTimestamp } from "firebase/database";
 import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "../../../lib/firebase";
 import { getRandomQuestion, isCorrectAnswer } from "../../../lib/questions";
 
 const TIMER_SECONDS = 15;
-const REVEAL_SECONDS = 3;
 const TOTAL_ROUNDS = 10;
 
 type Player = {
@@ -25,22 +25,17 @@ type Question = {
 
 type Room = {
   hostId: string;
-
-  status?: "lobby" | "playing" | "reveal" | "ended";
-
+  status?: "lobby" | "playing" | "ended";
   currentQuestion?: Question;
   questionIndex?: number;
   usedQuestionIndexes?: number[];
-
+  roundStartedAt?: number;
   roundNumber?: number;
   totalRounds?: number;
-
-  roundStartedAt?: number;
-  revealStartedAt?: number;
-
   roundAnswers?: Record<string, Record<string, boolean>>;
   players?: Record<string, Player>;
 };
+
 export default function RoomPage() {
   const params = useParams();
   const roomCode = params.roomCode as string;
@@ -50,17 +45,10 @@ export default function RoomPage() {
   const [name, setName] = useState("");
   const [answer, setAnswer] = useState("");
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
-const [serverOffset, setServerOffset] = useState(0);
+  const [serverOffset, setServerOffset] = useState(0);
 
-useEffect(() => {
-  const offsetRef = ref(db, ".info/serverTimeOffset");
+  const isHost = Boolean(uid && room?.hostId === uid);
 
-  const unsubscribe = onValue(offsetRef, (snapshot) => {
-    setServerOffset(snapshot.val() || 0);
-  });
-
-  return () => unsubscribe();
-}, []);
   useEffect(() => {
     const savedName = localStorage.getItem("name");
     if (savedName) setName(savedName);
@@ -90,19 +78,41 @@ useEffect(() => {
     return () => unsubscribe();
   }, [roomCode]);
 
-  uuseEffect(() => {
-  if (room?.status !== "playing" || !room.roundStartedAt) return;
+  useEffect(() => {
+    const offsetRef = ref(db, ".info/serverTimeOffset");
 
-  const interval = setInterval(() => {
-    const serverNow = Date.now() + serverOffset;
-    const elapsed = Math.floor((serverNow - room.roundStartedAt!) / 1000);
-    const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
+    const unsubscribe = onValue(offsetRef, (snapshot) => {
+      setServerOffset(snapshot.val() || 0);
+    });
 
-    setTimeLeft(remaining);
-  }, 300);
+    return () => unsubscribe();
+  }, []);
 
-  return () => clearInterval(interval);
-}, [room?.status, room?.roundStartedAt, serverOffset]);;
+  useEffect(() => {
+    if (room?.status !== "playing" || !room.roundStartedAt) return;
+
+    const interval = setInterval(() => {
+      const serverNow = Date.now() + serverOffset;
+      const elapsed = Math.floor((serverNow - room.roundStartedAt!) / 1000);
+      const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
+
+      setTimeLeft(remaining);
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, [room?.status, room?.roundStartedAt, serverOffset]);
+
+  useEffect(() => {
+    if (!isHost) return;
+    if (room?.status !== "playing") return;
+    if (timeLeft !== 0) return;
+
+    const timeout = setTimeout(() => {
+      nextQuestion();
+    }, 2500);
+
+    return () => clearTimeout(timeout);
+  }, [timeLeft, isHost, room?.status, room?.questionIndex]);
 
   async function joinRoom() {
     if (!uid) return;
@@ -123,31 +133,42 @@ useEffect(() => {
   }
 
   async function startGame() {
-  const random = getRandomQuestion([]);
+    const random = getRandomQuestion([]);
 
-  await update(ref(db, `rooms/${roomCode}`), {
-    status: "playing",
-    questionIndex: random.index,
-    roundNumber: 1,
-    totalRounds: TOTAL_ROUNDS,
-    usedQuestionIndexes: [random.index],
-    currentQuestion: random.question,
-    roundStartedAt: Date.now(),
-    roundAnswers: {},
-  });
+    await update(ref(db, `rooms/${roomCode}`), {
+      status: "playing",
+      questionIndex: random.index,
+      roundNumber: 1,
+      totalRounds: TOTAL_ROUNDS,
+      usedQuestionIndexes: [random.index],
+      currentQuestion: random.question,
+      roundStartedAt: serverTimestamp(),
+      roundAnswers: {},
+    });
 
-  setAnswer("");
-}
+    setAnswer("");
+  }
 
   async function nextQuestion() {
+    const currentRound = room?.roundNumber || 1;
+
+    if (currentRound >= TOTAL_ROUNDS) {
+      await update(ref(db, `rooms/${roomCode}`), {
+        status: "ended",
+      });
+      return;
+    }
+
     const used = room?.usedQuestionIndexes || [];
     const random = getRandomQuestion(used);
 
     await update(ref(db, `rooms/${roomCode}`), {
+      status: "playing",
       questionIndex: random.index,
+      roundNumber: currentRound + 1,
       usedQuestionIndexes: [...used, random.index],
       currentQuestion: random.question,
-      roundStartedAt: Date.now(),
+      roundStartedAt: serverTimestamp(),
     });
 
     setAnswer("");
@@ -208,7 +229,6 @@ useEffect(() => {
   }
 
   const players = Object.values(room.players || {});
-  const isHost = uid === room.hostId;
   const questionKey = String(room.questionIndex);
   const alreadyAnswered = uid ? room.roundAnswers?.[questionKey]?.[uid] : false;
 
@@ -225,7 +245,7 @@ useEffect(() => {
           Copy invite link
         </button>
 
-        {room.status !== "playing" && (
+        {room.status !== "playing" && room.status !== "ended" && (
           <div style={styles.section}>
             <h2>Join Room</h2>
 
@@ -251,7 +271,11 @@ useEffect(() => {
         {room.status === "playing" && room.currentQuestion && (
           <div style={styles.section}>
             <div style={styles.topRow}>
-              <h2>Guess the {room.currentQuestion.type}</h2>
+              <div>
+                <h2>Round {room.roundNumber || 1} / {room.totalRounds || TOTAL_ROUNDS}</h2>
+                <p>Guess the {room.currentQuestion.type}</p>
+              </div>
+
               <div style={styles.timer}>{timeLeft}s</div>
             </div>
 
@@ -270,9 +294,7 @@ useEffect(() => {
             )}
 
             <input
-              placeholder={
-                alreadyAnswered ? "Already answered" : "Type your answer"
-              }
+              placeholder={alreadyAnswered ? "Already answered" : "Type your answer"}
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               disabled={timeLeft === 0 || !!alreadyAnswered}
@@ -286,10 +308,17 @@ useEffect(() => {
             >
               Submit
             </button>
+          </div>
+        )}
+
+        {room.status === "ended" && (
+          <div style={styles.section}>
+            <h2>Game Over 🎉</h2>
+            <p>Final leaderboard:</p>
 
             {isHost && (
-              <button onClick={nextQuestion} style={styles.startButton}>
-                Next Random Question
+              <button onClick={startGame} style={styles.startButton}>
+                Play Again
               </button>
             )}
           </div>
@@ -314,7 +343,7 @@ useEffect(() => {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
     background: "linear-gradient(135deg, #020617, #1e293b)",
