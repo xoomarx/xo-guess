@@ -69,7 +69,7 @@ function playSound(file: string) {
   }, []);
 useEffect(() => {
   if (room?.phase === "reveal" && lastPhase !== "reveal") {
-    playSound("reveal.mp3");
+    playSound("timer.mp3");
     setLastPhase("reveal");
   }
 
@@ -81,7 +81,7 @@ const [gameEnded, setGameEnded] = useState(false);
 
 useEffect(() => {
   if (room?.status === "ended" && !gameEnded) {
-    playSound("game-over.mp3");
+    playSound("gameover.mp3");
     setGameEnded(true);
   }
 }, [room?.status]);
