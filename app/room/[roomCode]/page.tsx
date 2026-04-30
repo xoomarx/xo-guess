@@ -12,10 +12,7 @@ const TIMER_SECONDS = 15;
 const TOTAL_ROUNDS = 10;
 const REVEAL_SECONDS = 3;
 
-type Player = {
-  name: string;
-  score: number;
-};
+type Player = { name: string; score: number };
 
 type Question = {
   type: "flag" | "logo";
@@ -39,6 +36,8 @@ type Room = {
   players?: Record<string, Player>;
 };
 
+type SoundName = "correct" | "wrong" | "timer" | "gameover";
+
 export default function RoomPage() {
   const params = useParams();
   const roomCode = params.roomCode as string;
@@ -55,89 +54,75 @@ export default function RoomPage() {
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
-const soundsRef = useRef<Record<string, HTMLAudioElement | null>>({
-  correct: null,
-  wrong: null,
-  timer: null,
-  gameover: null,
-});
   const [lastPhase, setLastPhase] = useState<string | null>(null);
   const [gameEnded, setGameEnded] = useState(false);
 
-  const isHost = Boolean(uid && room?.hostId === uid);
-const soundsRef = useRef<Record<string, HTMLAudioElement | null>>({
-  correct: null,
-  wrong: null,
-  timer: null,
-  gameover: null,
-});
-
-function playSound(name: "correct" | "wrong" | "timer" | "gameover") {
-  const audio = soundsRef.current[name];
-
-  if (!audio) return;
-
-  audio.currentTime = 0;
-  audio.play().catch((error) => {
-    console.log("Sound failed:", name, error);
+  const soundsRef = useRef<Record<SoundName, HTMLAudioElement | null>>({
+    correct: null,
+    wrong: null,
+    timer: null,
+    gameover: null,
   });
-}
+
+  const isHost = Boolean(uid && room?.hostId === uid);
+
+  useEffect(() => {
+    soundsRef.current.correct = new Audio("/sounds/correct.mp3");
+    soundsRef.current.wrong = new Audio("/sounds/wrong.mp3");
+    soundsRef.current.timer = new Audio("/sounds/timer.mp3");
+    soundsRef.current.gameover = new Audio("/sounds/gameover.mp3");
+
+    Object.values(soundsRef.current).forEach((audio) => {
+      if (audio) {
+        audio.volume = 0.6;
+        audio.preload = "auto";
+      }
+    });
+  }, []);
+
+  function playSound(name: SoundName) {
+    const audio = soundsRef.current[name];
+    if (!audio) return;
+
+    audio.currentTime = 0;
+    audio.play().catch((error) => {
+      console.log("Sound failed:", name, error);
+    });
+  }
 
   function enableSound() {
-  const audio = soundsRef.current.correct;
+    const audio = soundsRef.current.correct;
+    if (!audio) return;
 
-  if (!audio) return;
+    audio.currentTime = 0;
+    audio.volume = 0.3;
 
-  audio.currentTime = 0;
-  audio.volume = 0.3;
+    audio
+      .play()
+      .then(() => {
+        audio.volume = 0.6;
+        setSoundEnabled(true);
+      })
+      .catch((error) => {
+        console.log("Enable sound failed:", error);
+      });
+  }
 
-  audio
-    .play()
-    .then(() => {
-      setSoundEnabled(true);
-      audio.volume = 0.6;
-    })
-    .catch((error) => {
-      console.log("Enable sound failed:", error);
-    });
-}
-useEffect(() => {
-  soundsRef.current.correct = new Audio("/sounds/correct.mp3");
-  soundsRef.current.wrong = new Audio("/sounds/wrong.mp3");
-  soundsRef.current.timer = new Audio("/sounds/timer.mp3");
-  soundsRef.current.gameover = new Audio("/sounds/gameover.mp3");
-
-  Object.values(soundsRef.current).forEach((audio) => {
-    if (audio) {
-      audio.volume = 0.6;
-      audio.preload = "auto";
-    }
-  });
-}, []);
   useEffect(() => {
     const savedName = localStorage.getItem("name");
     if (savedName) setName(savedName);
   }, []);
 
   useEffect(() => {
-    if (auth.currentUser) {
-      setUid(auth.currentUser.uid);
-    } else {
-      signInAnonymously(auth).then((result) => {
-        setUid(result.user.uid);
-      });
-    }
+    if (auth.currentUser) setUid(auth.currentUser.uid);
+    else signInAnonymously(auth).then((result) => setUid(result.user.uid));
   }, []);
 
   useEffect(() => {
     const roomRef = ref(db, `rooms/${roomCode}`);
 
     const unsubscribe = onValue(roomRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setRoom(snapshot.val());
-      } else {
-        setRoom(null);
-      }
+      setRoom(snapshot.exists() ? snapshot.val() : null);
     });
 
     return () => unsubscribe();
@@ -149,9 +134,7 @@ useEffect(() => {
       setLastPhase("reveal");
     }
 
-    if (room?.phase === "question") {
-      setLastPhase("question");
-    }
+    if (room?.phase === "question") setLastPhase("question");
   }, [room?.phase, soundEnabled, lastPhase]);
 
   useEffect(() => {
@@ -160,9 +143,7 @@ useEffect(() => {
       setGameEnded(true);
     }
 
-    if (room?.status !== "ended") {
-      setGameEnded(false);
-    }
+    if (room?.status !== "ended") setGameEnded(false);
   }, [room?.status, soundEnabled, gameEnded]);
 
   useEffect(() => {
@@ -175,9 +156,7 @@ useEffect(() => {
     });
 
     setPrevScores((prev) => {
-      const hasPreviousScores = Object.keys(prev).length > 0;
-
-      if (!hasPreviousScores) {
+      if (Object.keys(prev).length === 0) {
         setDisplayScores(newScores);
         return newScores;
       }
@@ -194,12 +173,7 @@ useEffect(() => {
 
           const interval = setInterval(() => {
             current += 1;
-
-            setDisplayScores((s) => ({
-              ...s,
-              [playerName]: current,
-            }));
-
+            setDisplayScores((s) => ({ ...s, [playerName]: current }));
             if (current >= score) clearInterval(interval);
           }, 120);
 
@@ -462,6 +436,7 @@ useEffect(() => {
             <h2>Join Room</h2>
 
             <input
+              name="playerName"
               placeholder="Your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -524,6 +499,7 @@ useEffect(() => {
             )}
 
             <input
+              name="answer"
               placeholder={alreadyAnswered ? "Already answered" : "Type your answer"}
               value={answer}
               onChange={(e) => {
@@ -536,15 +512,12 @@ useEffect(() => {
 
             {feedback && <p style={styles.feedback}>{feedback}</p>}
 
-         <button
-  onClick={() => {
-    playSound("correct");
-    console.log("PLAYING SOUND");
-  }}
-  style={styles.button}
->
-  TEST SOUND
-</button>
+            <button
+              onClick={submitAnswer}
+              disabled={room.phase === "reveal" || timeLeft === 0 || !!alreadyAnswered}
+              style={styles.button}
+            >
+              Submit
             </button>
           </div>
         )}
