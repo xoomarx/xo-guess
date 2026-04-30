@@ -81,12 +81,22 @@ useEffect(() => {
   });
 
   setPrevScores((prev) => {
+    const hasPreviousScores = Object.keys(prev).length > 0;
+
+    if (!hasPreviousScores) {
+      setDisplayScores(newScores);
+      return newScores;
+    }
+
     Object.entries(newScores).forEach(([name, score]) => {
       const oldScore = prev[name] ?? 0;
       const gained = score - oldScore;
 
       if (gained > 0) {
         let current = oldScore;
+
+        setJustScored((s) => ({ ...s, [name]: true }));
+        setScorePopups((s) => ({ ...s, [name]: gained }));
 
         const interval = setInterval(() => {
           current += 1;
@@ -99,10 +109,7 @@ useEffect(() => {
           if (current >= score) {
             clearInterval(interval);
           }
-        }, 90);
-
-        setJustScored((s) => ({ ...s, [name]: true }));
-        setScorePopups((s) => ({ ...s, [name]: gained }));
+        }, 120);
 
         setTimeout(() => {
           setJustScored((s) => ({ ...s, [name]: false }));
@@ -112,31 +119,12 @@ useEffect(() => {
             return copy;
           });
         }, 1200);
-      } else {
-        setDisplayScores((s) => ({
-          ...s,
-          [name]: score,
-        }));
       }
     });
 
     return newScores;
   });
-}, [room?.players]);}, [room?.players]);
-  useEffect(() => {
-    const roomRef = ref(db, `rooms/${roomCode}`);
-
-    const unsubscribe = onValue(roomRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setRoom(snapshot.val());
-      } else {
-        setRoom(null);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [roomCode]);
-
+}, [room?.players]);
   useEffect(() => {
     const offsetRef = ref(db, ".info/serverTimeOffset");
 
@@ -310,6 +298,15 @@ setFeedback("");
   if (room === undefined) {
     return (
       <main style={styles.page}>
+
+        <h1>Loading room...</h1>
+      </main>
+    );
+  }
+
+  if (room === null) {
+    return (
+      <main style={styles.page}>
 <style jsx global>{`
   @keyframes floatPoints {
     0% {
@@ -326,14 +323,6 @@ setFeedback("");
     }
   }
 `}</style>
-        <h1>Loading room...</h1>
-      </main>
-    );
-  }
-
-  if (room === null) {
-    return (
-      <main style={styles.page}>
         <h1>Room not found</h1>
       </main>
     );
