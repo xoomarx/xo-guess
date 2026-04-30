@@ -458,7 +458,7 @@ const correctPlayers = correctPlayerIds
                 <strong>{player.score} pts</strong>
 
 {scorePopups[player.name] && (
-  <span style={styles.pointsPopup}>+{scorePopups[player.name]}</span>
+  <span style={styles.pointsPopup}>+{scorePopups[player.name]} pts</span>
 )}
               </div>
             ))}
@@ -585,13 +585,19 @@ revealNext: {
 },
 pointsPopup: {
   position: "absolute",
-  right: 18,
-  top: 6,
-  color: "#bbf7d0",
+  right: 95,
+  top: "50%",
+  transform: "translateY(-50%)",
+  color: "#a3e635",
+  background: "#14532d",
+  border: "1px solid #22c55e",
+  borderRadius: 999,
+  padding: "4px 10px",
   fontWeight: "bold",
-  fontSize: 18,
+  fontSize: 16,
   animation: "floatPoints 1.2s ease-out forwards",
   pointerEvents: "none",
+  zIndex: 5,
 },
 playerHighlight: {
   background: "#064e3b",
