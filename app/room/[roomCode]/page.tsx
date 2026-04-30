@@ -35,7 +35,7 @@ type Room = {
   totalRounds?: number;
 phase?: "question" | "reveal";
 revealStartedAt?: number;
-  roundAnswers?: Record<string, Record<string, boolean>>;
+  roundAnswers?: Record<string, Record<string, { correct: boolean }>>;
   players?: Record<string, Player>;
 };
 
@@ -216,7 +216,7 @@ if (room.phase === "reveal") return;
     }
 
     const questionKey = String(room.questionIndex);
-    const alreadyAnswered = room.roundAnswers?.[questionKey]?.[uid];
+    const alreadyAnswered = room.roundAnswers?.[questionKey]?.[uid]?.correct;
 
     if (alreadyAnswered) {
       alert("You already answered this round.");
@@ -243,7 +243,9 @@ if (!correct) {
 
     await update(ref(db, `rooms/${roomCode}`), {
       [`players/${uid}/score`]: currentScore + earnedPoints,
-      [`roundAnswers/${questionKey}/${uid}`]: true,
+      [`roundAnswers/${questionKey}/${uid}`]: {
+  correct: true,
+},
     });
 setFeedback(`✅ Correct! +${earnedPoints} pts`);
 
@@ -268,7 +270,16 @@ setFeedback(`✅ Correct! +${earnedPoints} pts`);
 
   const players = Object.values(room.players || {});
   const questionKey = String(room.questionIndex);
-  const alreadyAnswered = uid ? room.roundAnswers?.[questionKey]?.[uid] : false;
+  const alreadyAnswered = uid
+  ? room.roundAnswers?.[questionKey]?.[uid]?.correct
+  : false;
+const correctPlayerIds = Object.entries(room.roundAnswers?.[questionKey] || {})
+  .filter(([, result]) => result.correct)
+  .map(([playerId]) => playerId);
+
+const correctPlayers = correctPlayerIds
+  .map((playerId) => room.players?.[playerId]?.name)
+  .filter(Boolean);
 
   return (
     <main style={styles.page}>
