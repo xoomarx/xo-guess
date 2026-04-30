@@ -4,75 +4,47 @@ export type Question = {
   answer: string;
   acceptedAnswers: string[];
 };
+const FLAG_CODES = [
+  "ad","ae","af","ag","ai","al","am","ao","ar","as","at","au","aw","az",
+  "ba","bb","bd","be","bf","bg","bh","bi","bj","bm","bn","bo","br","bs","bt","bw","by","bz",
+  "ca","cd","cf","cg","ch","ci","cl","cm","cn","co","cr","cu","cv","cy","cz",
+  "de","dj","dk","dm","do","dz",
+  "ec","ee","eg","er","es","et",
+  "fi","fj","fm","fr",
+  "ga","gb","gd","ge","gh","gm","gn","gq","gr","gt","gw","gy",
+  "hk","hn","hr","ht","hu",
+  "id","ie","il","in","iq","ir","is","it",
+  "jm","jo","jp",
+  "ke","kg","kh","ki","km","kn","kp","kr","kw","kz",
+  "la","lb","lc","li","lk","lr","ls","lt","lu","lv","ly",
+  "ma","mc","md","me","mg","mh","mk","ml","mm","mn","mr","mt","mu","mv","mw","mx","my","mz",
+  "na","ne","ng","ni","nl","no","np","nr","nz",
+  "om",
+  "pa","pe","pg","ph","pk","pl","ps","pt","pw","py",
+  "qa",
+  "ro","rs","ru","rw",
+  "sa","sb","sc","sd","se","sg","si","sk","sl","sm","sn","so","sr","ss","st","sv","sy","sz",
+  "td","tg","th","tj","tl","tm","tn","to","tr","tt","tv","tw","tz",
+  "ua","ug","us","uy","uz",
+  "va","vc","ve","vn","vu",
+  "ws",
+  "ye",
+  "za","zm","zw",
+] as const;
 
-const COUNTRIES = [
-  ["us", "United States", ["usa", "america", "us"]],
-  ["gb", "United Kingdom", ["uk", "britain", "great britain"]],
-  ["fr", "France", []],
-  ["de", "Germany", []],
-  ["it", "Italy", []],
-  ["es", "Spain", []],
-  ["pt", "Portugal", []],
-  ["br", "Brazil", ["brasil"]],
-  ["ar", "Argentina", []],
-  ["ca", "Canada", []],
-  ["mx", "Mexico", []],
-  ["jp", "Japan", []],
-  ["cn", "China", []],
-  ["kr", "South Korea", ["korea"]],
-  ["in", "India", []],
-  ["au", "Australia", []],
-  ["nz", "New Zealand", []],
-  ["lb", "Lebanon", ["liban"]],
-  ["eg", "Egypt", []],
-  ["sa", "Saudi Arabia", []],
-  ["ae", "United Arab Emirates", ["uae"]],
-  ["qa", "Qatar", []],
-  ["kw", "Kuwait", []],
-  ["jo", "Jordan", []],
-  ["tr", "Turkey", []],
-  ["gr", "Greece", []],
-  ["nl", "Netherlands", ["holland"]],
-  ["be", "Belgium", []],
-  ["ch", "Switzerland", []],
-  ["se", "Sweden", []],
-  ["no", "Norway", []],
-  ["dk", "Denmark", []],
-  ["fi", "Finland", []],
-  ["pl", "Poland", []],
-  ["ua", "Ukraine", []],
-  ["ru", "Russia", []],
-  ["za", "South Africa", []],
-  ["ma", "Morocco", []],
-  ["tn", "Tunisia", []],
-  ["dz", "Algeria", []],
-  ["ng", "Nigeria", []],
-  ["ke", "Kenya", []],
-  ["id", "Indonesia", []],
-  ["my", "Malaysia", []],
-  ["th", "Thailand", []],
-  ["vn", "Vietnam", []],
-  ["ph", "Philippines", []],
-  ["sg", "Singapore", []],
-  ["pk", "Pakistan", []],
-  ["bd", "Bangladesh", []],
-  ["ir", "Iran", []],
-  ["iq", "Iraq", []],
-  ["ie", "Ireland", []],
-  ["is", "Iceland", []],
-  ["at", "Austria", []],
-  ["cz", "Czech Republic", ["czechia"]],
-  ["ro", "Romania", []],
-  ["hu", "Hungary", []],
-  ["hr", "Croatia", []],
-  ["rs", "Serbia", []],
-  ["al", "Albania", []],
-  ["cl", "Chile", []],
-  ["co", "Colombia", []],
-  ["pe", "Peru", []],
-  ["uy", "Uruguay", []],
-  ["ve", "Venezuela", []],
-];
+const FLAG_ALIASES: Record<string, string[]> = {
+  us: ["usa", "america", "united states of america"],
+  gb: ["uk", "britain", "great britain", "united kingdom"],
+  kr: ["south korea", "korea"],
+  kp: ["north korea"],
+  ae: ["uae", "emirates"],
+  cz: ["czechia"],
+  nl: ["holland"],
+  br: ["brasil"],
+  lb: ["liban"],
+};
+
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 
 const LOGOS = [
   ["youtube", "YouTube"],
@@ -136,12 +108,16 @@ const LOGOS = [
 ];
 
 export const QUESTIONS: Question[] = [
-  ...COUNTRIES.map(([code, answer, aliases]) => ({
+...FLAG_CODES.map((code) => {
+  const answer = regionNames.of(code.toUpperCase()) || code.toUpperCase();
+
+  return {
     type: "flag" as const,
     imageUrl: `https://flagcdn.com/w320/${code}.png`,
-    answer: answer as string,
-    acceptedAnswers: [answer as string, ...(aliases as string[])],
-  })),
+    answer,
+    acceptedAnswers: [answer, ...(FLAG_ALIASES[code] || [])],
+  };
+}),
 
   ...LOGOS.map(([slug, answer]) => ({
     type: "logo" as const,
