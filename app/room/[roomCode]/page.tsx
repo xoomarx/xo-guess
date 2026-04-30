@@ -50,7 +50,7 @@ export default function RoomPage() {
 const [feedback, setFeedback] = useState("");
 const [prevScores, setPrevScores] = useState<Record<string, number>>({});
 const [justScored, setJustScored] = useState<Record<string, boolean>>({});
-
+const [scorePopups, setScorePopups] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
 
@@ -80,12 +80,27 @@ useEffect(() => {
   });
 
   setPrevScores((prev) => {
+    const hasPreviousScores = Object.keys(prev).length > 0;
+
+    if (!hasPreviousScores) {
+      return newScores;
+    }
+
     Object.entries(newScores).forEach(([name, score]) => {
-      if (score > (prev[name] ?? 0)) {
+      const oldScore = prev[name] ?? 0;
+      const gained = score - oldScore;
+
+      if (gained > 0) {
         setJustScored((s) => ({ ...s, [name]: true }));
+        setScorePopups((s) => ({ ...s, [name]: gained }));
 
         setTimeout(() => {
           setJustScored((s) => ({ ...s, [name]: false }));
+          setScorePopups((s) => {
+            const copy = { ...s };
+            delete copy[name];
+            return copy;
+          });
         }, 1200);
       }
     });
@@ -93,7 +108,6 @@ useEffect(() => {
     return newScores;
   });
 }, [room?.players]);
-
   useEffect(() => {
     const roomRef = ref(db, `rooms/${roomCode}`);
 
@@ -281,6 +295,22 @@ setFeedback(`✅ Correct! +${earnedPoints} pts`);
   if (room === undefined) {
     return (
       <main style={styles.page}>
+<style jsx global>{`
+  @keyframes floatPoints {
+    0% {
+      opacity: 0;
+      transform: translateY(8px) scale(0.9);
+    }
+    20% {
+      opacity: 1;
+      transform: translateY(0) scale(1.1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-28px) scale(1);
+    }
+  }
+`}</style>
         <h1>Loading room...</h1>
       </main>
     );
@@ -426,6 +456,10 @@ const correctPlayers = correctPlayerIds
                   #{index + 1} {player.name}
                 </span>
                 <strong>{player.score} pts</strong>
+
+{scorePopups[player.name] && (
+  <span style={styles.pointsPopup}>+{scorePopups[player.name]}</span>
+)}
               </div>
             ))}
         </div>
@@ -549,6 +583,16 @@ revealNext: {
   color: "#cbd5e1",
   margin: 0,
 },
+pointsPopup: {
+  position: "absolute",
+  right: 18,
+  top: 6,
+  color: "#bbf7d0",
+  fontWeight: "bold",
+  fontSize: 18,
+  animation: "floatPoints 1.2s ease-out forwards",
+  pointerEvents: "none",
+},
 playerHighlight: {
   background: "#064e3b",
   border: "1px solid #22c55e",
@@ -556,6 +600,8 @@ playerHighlight: {
   transition: "all 0.3s ease",
 },
   player: {
+position: "relative",
+overflow: "hidden",
     display: "flex",
     justifyContent: "space-between",
     background: "#1e293b",
