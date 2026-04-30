@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { onValue, ref, update } from "firebase/database";
 import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "../../../lib/firebase";
-import { QUESTIONS } from "../../../lib/questions";
+import { getRandomQuestion, isCorrectAnswer } from "../../../lib/questions";
 
 type Player = {
   name: string;
@@ -23,6 +23,7 @@ type Room = {
   status?: "lobby" | "playing";
   currentQuestion?: Question;
   questionIndex?: number;
+  usedQuestionIndexes?: number[];
   players?: Record<string, Player>;
 };
 
@@ -83,33 +84,35 @@ export default function RoomPage() {
   }
 
   async function startGame() {
-    await update(ref(db, `rooms/${roomCode}`), {
-      status: "playing",
-      questionIndex: 0,
-      currentQuestion: QUESTIONS[0],
-    });
-  }
+    const random = getRandomQuestion([]);
+
+  await update(ref(db, `rooms/${roomCode}`), {
+    status: "playing",
+    questionIndex: random.index,
+    usedQuestionIndexes: [random.index],
+    currentQuestion: random.question,
+  });
+}
 
   async function nextQuestion() {
-    const currentIndex = room?.questionIndex || 0;
-    const nextIndex = (currentIndex + 1) % QUESTIONS.length;
+    onst used = room?.usedQuestionIndexes || [];
+  const random = getRandomQuestion(used);
 
-    await update(ref(db, `rooms/${roomCode}`), {
-      questionIndex: nextIndex,
-      currentQuestion: QUESTIONS[nextIndex],
-    });
+  await update(ref(db, `rooms/${roomCode}`), {
+    questionIndex: random.index,
+    usedQuestionIndexes: [...used, random.index],
+    currentQuestion: random.question,
+  });
 
-    setAnswer("");
-  }
+  setAnswer("");
+}
 
   async function submitAnswer() {
     if (!room?.currentQuestion) return;
     if (!uid) return;
 
     const correct =
-      answer.trim().toLowerCase() === room.currentQuestion.answer.toLowerCase();
-
-    if (!correct) {
+      const correct = isCorrectAnswer(answer, room.currentQuestion);    if (!correct) {
       alert("Wrong answer");
       return;
     }
