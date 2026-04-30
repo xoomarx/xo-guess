@@ -287,7 +287,7 @@ if (!correct) {
   correct: true,
 },
     });
-setFeedback(`✅ Correct! +${earnedPoints} pts`);
+setFeedback("");
 
       setAnswer("");
   }
@@ -410,9 +410,6 @@ const correctPlayers = correctPlayerIds
               disabled={room.phase === "reveal" || timeLeft === 0 || !!alreadyAnswered}
               style={styles.input}
             />
-{feedback && (
-  <p style={{ color: "#f87171", marginTop: 10 }}>{feedback}</p>
-)}
 
             <button
               onClick={submitAnswer}
@@ -455,11 +452,15 @@ const correctPlayers = correctPlayerIds
                 <span>
                   #{index + 1} {player.name}
                 </span>
-                <strong>{player.score} pts</strong>
+<div style={styles.scoreContainer}>
+  <strong>{player.score} pts</strong>
 
-{scorePopups[player.name] && (
-  <span style={styles.pointsPopup}>+{scorePopups[player.name]} pts</span>
-)}
+  {scorePopups[player.name] && (
+    <span style={styles.pointsPopup}>
+      +{scorePopups[player.name]}
+    </span>
+  )}
+</div>
               </div>
             ))}
         </div>
@@ -584,20 +585,17 @@ revealNext: {
   margin: 0,
 },
 pointsPopup: {
-  position: "absolute",
-  right: 95,
-  top: "50%",
-  transform: "translateY(-50%)",
   color: "#a3e635",
-  background: "#14532d",
-  border: "1px solid #22c55e",
-  borderRadius: 999,
-  padding: "4px 10px",
   fontWeight: "bold",
   fontSize: 16,
   animation: "floatPoints 1.2s ease-out forwards",
   pointerEvents: "none",
-  zIndex: 5,
+},
+scoreContainer: {
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
 },
 playerHighlight: {
   background: "#064e3b",
