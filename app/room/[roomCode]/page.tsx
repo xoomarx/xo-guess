@@ -33,8 +33,8 @@ type Room = {
   roundStartedAt?: number;
   roundNumber?: number;
   totalRounds?: number;
-phase?: "question" | "reveal";
-revealStartedAt?: number;
+  phase?: "question" | "reveal";
+  revealStartedAt?: number;
   roundAnswers?: Record<string, Record<string, { correct: boolean }>>;
   players?: Record<string, Player>;
 };
@@ -47,11 +47,11 @@ export default function RoomPage() {
   const [uid, setUid] = useState("");
   const [name, setName] = useState("");
   const [answer, setAnswer] = useState("");
-const [feedback, setFeedback] = useState("");
-const [prevScores, setPrevScores] = useState<Record<string, number>>({});
-const [justScored, setJustScored] = useState<Record<string, boolean>>({});
-const [displayScores, setDisplayScores] = useState<Record<string, number>>({});
-const [scorePopups, setScorePopups] = useState<Record<string, number>>({});
+  const [feedback, setFeedback] = useState("");
+  const [prevScores, setPrevScores] = useState<Record<string, number>>({});
+  const [justScored, setJustScored] = useState<Record<string, boolean>>({});
+  const [displayScores, setDisplayScores] = useState<Record<string, number>>({});
+  const [scorePopups, setScorePopups] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
 
@@ -71,60 +71,87 @@ const [scorePopups, setScorePopups] = useState<Record<string, number>>({});
       });
     }
   }, []);
-useEffect(() => {
-  if (!room?.players) return;
 
-  const newScores: Record<string, number> = {};
+  useEffect(() => {
+    const roomRef = ref(db, `rooms/${roomCode}`);
 
-  Object.values(room.players).forEach((player) => {
-    newScores[player.name] = player.score;
-  });
-
-  setPrevScores((prev) => {
-    const hasPreviousScores = Object.keys(prev).length > 0;
-
-    if (!hasPreviousScores) {
-      setDisplayScores(newScores);
-      return newScores;
-    }
-
-    Object.entries(newScores).forEach(([name, score]) => {
-      const oldScore = prev[name] ?? 0;
-      const gained = score - oldScore;
-
-      if (gained > 0) {
-        let current = oldScore;
-
-        setJustScored((s) => ({ ...s, [name]: true }));
-        setScorePopups((s) => ({ ...s, [name]: gained }));
-
-        const interval = setInterval(() => {
-          current += 1;
-
-          setDisplayScores((s) => ({
-            ...s,
-            [name]: current,
-          }));
-
-          if (current >= score) {
-            clearInterval(interval);
-          }
-        }, 120);
-
-        setTimeout(() => {
-          setJustScored((s) => ({ ...s, [name]: false }));
-          setScorePopups((s) => {
-            const copy = { ...s };
-            delete copy[name];
-            return copy;
-          });
-        }, 1200);
+    const unsubscribe = onValue(roomRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setRoom(snapshot.val());
+      } else {
+        setRoom(null);
       }
     });
 
-    return newScores;
-  });
-}, [room?.players]);
+    return () => unsubscribe();
+  }, [roomCode]);
+
+  useEffect(() => {
+    if (!room?.players) return;
+
+    const newScores: Record<string, number> = {};
+
+    Object.values(room.players).forEach((player) => {
+      newScores[player.name] = player.score;
+    });
+
+    setPrevScores((prev) => {
+      const hasPreviousScores = Object.keys(prev).length > 0;
+
+      if (!hasPreviousScores) {
+        setDisplayScores(newScores);
+        return newScores;
+      }
+
+      Object.entries(newScores).forEach(([playerName, score]) => {
+        const oldScore = prev[playerName] ?? 0;
+        const gained = score - oldScore;
+
+        if (gained > 0) {
+          let current = oldScore;
+
+          setJustScored((currentState) => ({
+            ...currentState,
+            [playerName]: true,
+          }));
+
+          setScorePopups((currentState) => ({
+            ...currentState,
+            [playerName]: gained,
+          }));
+
+          const interval = setInterval(() => {
+            current += 1;
+
+            setDisplayScores((currentState) => ({
+              ...currentState,
+              [playerName]: current,
+            }));
+
+            if (current >= score) {
+              clearInterval(interval);
+            }
+          }, 120);
+
+          setTimeout(() => {
+            setJustScored((currentState) => ({
+              ...currentState,
+              [playerName]: false,
+            }));
+
+            setScorePopups((currentState) => {
+              const copy = { ...currentState };
+              delete copy[playerName];
+              return copy;
+            });
+          }, 1200);
+        }
+      });
+
+      return newScores;
+    });
+  }, [room?.players]);
+
   useEffect(() => {
     const offsetRef = ref(db, ".info/serverTimeOffset");
 
@@ -135,53 +162,53 @@ useEffect(() => {
     return () => unsubscribe();
   }, []);
 
- useEffect(() => {
-  if (room?.status !== "playing") return;
+  useEffect(() => {
+    if (room?.status !== "playing") return;
 
-  const interval = setInterval(() => {
-    const serverNow = Date.now() + serverOffset;
+    const interval = setInterval(() => {
+      const serverNow = Date.now() + serverOffset;
 
-    if (room.phase === "reveal" && room.revealStartedAt) {
-      const elapsed = Math.floor((serverNow - room.revealStartedAt) / 1000);
-      const remaining = Math.max(REVEAL_SECONDS - elapsed, 0);
+      if (room.phase === "reveal" && room.revealStartedAt) {
+        const elapsed = Math.floor((serverNow - room.revealStartedAt) / 1000);
+        const remaining = Math.max(REVEAL_SECONDS - elapsed, 0);
+
+        setTimeLeft(remaining);
+
+        if (remaining === 0 && isHost) {
+          clearInterval(interval);
+          nextQuestion();
+        }
+
+        return;
+      }
+
+      if (!room.roundStartedAt) return;
+
+      const elapsed = Math.floor((serverNow - room.roundStartedAt) / 1000);
+      const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
 
       setTimeLeft(remaining);
 
-      if (remaining === 0 && isHost) {
+      if (remaining === 0 && isHost && room.phase !== "reveal") {
         clearInterval(interval);
-        nextQuestion();
+
+        update(ref(db, `rooms/${roomCode}`), {
+          phase: "reveal",
+          revealStartedAt: serverTimestamp(),
+        });
       }
+    }, 300);
 
-      return;
-    }
-
-    if (!room.roundStartedAt) return;
-
-    const elapsed = Math.floor((serverNow - room.roundStartedAt) / 1000);
-    const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
-
-    setTimeLeft(remaining);
-
-    if (remaining === 0 && isHost && room.phase !== "reveal") {
-      clearInterval(interval);
-
-      update(ref(db, `rooms/${roomCode}`), {
-        phase: "reveal",
-        revealStartedAt: serverTimestamp(),
-      });
-    }
-  }, 300);
-
-  return () => clearInterval(interval);
-}, [
-  room?.status,
-  room?.roundStartedAt,
-  room?.revealStartedAt,
-  room?.phase,
-  room?.questionIndex,
-  serverOffset,
-  isHost,
-]);;
+    return () => clearInterval(interval);
+  }, [
+    room?.status,
+    room?.roundStartedAt,
+    room?.revealStartedAt,
+    room?.phase,
+    room?.questionIndex,
+    serverOffset,
+    isHost,
+  ]);
 
   async function joinRoom() {
     if (!uid) return;
@@ -213,12 +240,12 @@ useEffect(() => {
       currentQuestion: random.question,
       roundStartedAt: serverTimestamp(),
       roundAnswers: {},
-phase: "question",
-revealStartedAt: null,
-
+      phase: "question",
+      revealStartedAt: null,
     });
 
     setAnswer("");
+    setFeedback("");
   }
 
   async function nextQuestion() {
@@ -241,20 +268,21 @@ revealStartedAt: null,
       usedQuestionIndexes: [...used, random.index],
       currentQuestion: random.question,
       roundStartedAt: serverTimestamp(),
-phase: "question",
-revealStartedAt: null,
+      phase: "question",
+      revealStartedAt: null,
     });
 
     setAnswer("");
+    setFeedback("");
   }
 
   async function submitAnswer() {
     if (!room?.currentQuestion) return;
-if (room.phase === "reveal") return;
+    if (room.phase === "reveal") return;
     if (!uid) return;
 
     if (timeLeft <= 0) {
-      alert("Time is up!");
+      setFeedback("Time is up!");
       return;
     }
 
@@ -262,17 +290,17 @@ if (room.phase === "reveal") return;
     const alreadyAnswered = room.roundAnswers?.[questionKey]?.[uid]?.correct;
 
     if (alreadyAnswered) {
-      alert("You already answered this round.");
+      setFeedback("You already answered this round.");
       return;
     }
 
     const correct = isCorrectAnswer(answer, room.currentQuestion);
 
-if (!correct) {
-  setAnswer("");
-  setFeedback("Wrong answer, try again");
-  return;
-}
+    if (!correct) {
+      setAnswer("");
+      setFeedback("Wrong answer, try again");
+      return;
+    }
 
     const currentScore = room.players?.[uid]?.score || 0;
 
@@ -287,18 +315,17 @@ if (!correct) {
     await update(ref(db, `rooms/${roomCode}`), {
       [`players/${uid}/score`]: currentScore + earnedPoints,
       [`roundAnswers/${questionKey}/${uid}`]: {
-  correct: true,
-},
+        correct: true,
+      },
     });
-setFeedback("");
 
-      setAnswer("");
+    setFeedback("");
+    setAnswer("");
   }
 
   if (room === undefined) {
     return (
       <main style={styles.page}>
-
         <h1>Loading room...</h1>
       </main>
     );
@@ -307,43 +334,44 @@ setFeedback("");
   if (room === null) {
     return (
       <main style={styles.page}>
-<style jsx global>{`
-  @keyframes floatPoints {
-    0% {
-      opacity: 0;
-      transform: translateY(8px) scale(0.9);
-    }
-    20% {
-      opacity: 1;
-      transform: translateY(0) scale(1.1);
-    }
-    100% {
-      opacity: 0;
-      transform: translateY(-28px) scale(1);
-    }
-  }
-`}</style>
         <h1>Room not found</h1>
       </main>
     );
   }
 
-
   const players = Object.values(room.players || {});
   const questionKey = String(room.questionIndex);
   const alreadyAnswered = uid
-  ? room.roundAnswers?.[questionKey]?.[uid]?.correct
-  : false;
-const correctPlayerIds = Object.entries(room.roundAnswers?.[questionKey] || {})
-  .filter(([, result]) => result.correct)
-  .map(([playerId]) => playerId);
+    ? room.roundAnswers?.[questionKey]?.[uid]?.correct
+    : false;
 
-const correctPlayers = correctPlayerIds
-  .map((playerId) => room.players?.[playerId]?.name)
-  .filter(Boolean);
+  const correctPlayerIds = Object.entries(room.roundAnswers?.[questionKey] || {})
+    .filter(([, result]) => result.correct)
+    .map(([playerId]) => playerId);
+
+  const correctPlayers = correctPlayerIds
+    .map((playerId) => room.players?.[playerId]?.name)
+    .filter(Boolean);
 
   return (
     <main style={styles.page}>
+      <style jsx global>{`
+        @keyframes floatPoints {
+          0% {
+            opacity: 0;
+            transform: translateY(8px) scale(0.9);
+          }
+          20% {
+            opacity: 1;
+            transform: translateY(0) scale(1.1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(-28px) scale(1);
+          }
+        }
+      `}</style>
+
       <section style={styles.card}>
         <h1 style={styles.title}>Logo & Flag Rush</h1>
         <p style={styles.room}>Room: {roomCode}</p>
@@ -401,23 +429,44 @@ const correctPlayers = correctPlayerIds
             </div>
 
             {room.phase === "reveal" && (
-  <div style={styles.revealBox}>
-    <p style={styles.revealLabel}>Correct answer</p>
-    <h2 style={styles.revealAnswer}>{room.currentQuestion.answer}</h2>
-    <p style={styles.revealNext}>Next question in {timeLeft}s</p>
-  </div>
-)}
+              <div style={styles.revealBox}>
+                <p style={styles.revealLabel}>Correct answer</p>
+                <h2 style={styles.revealAnswer}>{room.currentQuestion.answer}</h2>
+
+                {correctPlayers.length > 0 && (
+                  <div style={styles.correctPlayersBox}>
+                    <p style={styles.correctPlayersTitle}>Got it right:</p>
+
+                    {correctPlayers.map((playerName) => (
+                      <div key={playerName} style={styles.correctPlayer}>
+                        ✅ {playerName}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p style={styles.revealNext}>Next question in {timeLeft}s</p>
+              </div>
+            )}
+
             <input
               placeholder={alreadyAnswered ? "Already answered" : "Type your answer"}
               value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
+              onChange={(e) => {
+                setAnswer(e.target.value);
+                setFeedback("");
+              }}
               disabled={room.phase === "reveal" || timeLeft === 0 || !!alreadyAnswered}
               style={styles.input}
             />
 
+            {feedback && (
+              <p style={styles.feedback}>{feedback}</p>
+            )}
+
             <button
               onClick={submitAnswer}
-              disabled={timeLeft === 0 || !!alreadyAnswered}
+              disabled={room.phase === "reveal" || timeLeft === 0 || !!alreadyAnswered}
               style={styles.button}
             >
               Submit
@@ -445,28 +494,27 @@ const correctPlayers = correctPlayerIds
             .sort((a, b) => b.score - a.score)
             .map((player, index) => (
               <div
-  key={index}
-  style={{
-    ...styles.player,
-    ...(justScored[player.name]
-      ? styles.playerHighlight
-      : {}),
-  }}
->
+                key={index}
+                style={{
+                  ...styles.player,
+                  ...(justScored[player.name] ? styles.playerHighlight : {}),
+                }}
+              >
                 <span>
                   #{index + 1} {player.name}
                 </span>
-<div style={styles.scoreContainer}>
-  <strong>
-  {(displayScores[player.name] ?? player.score)} pts
-</strong>
 
-  {scorePopups[player.name] && (
-    <span style={styles.pointsPopup}>
-      +{scorePopups[player.name]}
-    </span>
-  )}
-</div>
+                <div style={styles.scoreContainer}>
+                  <strong>
+                    {(displayScores[player.name] ?? player.score)} pts
+                  </strong>
+
+                  {scorePopups[player.name] && (
+                    <span style={styles.pointsPopup}>
+                      +{scorePopups[player.name]}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
         </div>
@@ -540,6 +588,10 @@ const styles: Record<string, CSSProperties> = {
     marginTop: 10,
     minWidth: 220,
   },
+  feedback: {
+    color: "#f87171",
+    marginTop: 10,
+  },
   button: {
     padding: "12px 18px",
     borderRadius: 12,
@@ -569,49 +621,67 @@ const styles: Record<string, CSSProperties> = {
     color: "white",
     cursor: "pointer",
   },
-revealBox: {
-  background: "#082f49",
-  border: "1px solid #38bdf8",
-  borderRadius: 18,
-  padding: 20,
-  marginBottom: 18,
-  textAlign: "center",
-},
-revealLabel: {
-  color: "#bae6fd",
-  margin: 0,
-},
-revealAnswer: {
-  color: "#facc15",
-  fontSize: 34,
-  margin: "8px 0",
-},
-revealNext: {
-  color: "#cbd5e1",
-  margin: 0,
-},
-pointsPopup: {
-  color: "#a3e635",
-  fontWeight: "bold",
-  fontSize: 16,
-  animation: "floatPoints 1.2s ease-out forwards",
-  pointerEvents: "none",
-},
-scoreContainer: {
-  position: "relative",
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-},
-playerHighlight: {
-  background: "#064e3b",
-  border: "1px solid #22c55e",
-  boxShadow: "0 0 12px #22c55e",
-  transition: "all 0.3s ease",
-},
+  revealBox: {
+    background: "#082f49",
+    border: "1px solid #38bdf8",
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 18,
+    textAlign: "center",
+  },
+  revealLabel: {
+    color: "#bae6fd",
+    margin: 0,
+  },
+  revealAnswer: {
+    color: "#facc15",
+    fontSize: 34,
+    margin: "8px 0",
+  },
+  correctPlayersBox: {
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  correctPlayersTitle: {
+    color: "#bae6fd",
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  correctPlayer: {
+    background: "#064e3b",
+    border: "1px solid #22c55e",
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 8,
+    color: "#dcfce7",
+    fontWeight: "bold",
+  },
+  revealNext: {
+    color: "#cbd5e1",
+    margin: 0,
+  },
+  scoreContainer: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+  pointsPopup: {
+    color: "#a3e635",
+    fontWeight: "bold",
+    fontSize: 16,
+    animation: "floatPoints 1.2s ease-out forwards",
+    pointerEvents: "none",
+  },
+  playerHighlight: {
+    background: "#064e3b",
+    border: "1px solid #22c55e",
+    boxShadow: "0 0 12px #22c55e",
+    transition: "all 0.3s ease",
+  },
   player: {
-position: "relative",
-overflow: "hidden",
+    position: "relative",
+    overflow: "visible",
     display: "flex",
     justifyContent: "space-between",
     background: "#1e293b",
