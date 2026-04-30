@@ -218,7 +218,7 @@ export default function RoomPage() {
       [`roundAnswers/${questionKey}/${uid}`]: true,
     });
 
-    alert(`Correct! +${earnedPoints} points`);
+    alert(`Correct! timeLeft=${timeLeft}, remaining=${remaining}, earned=${earnedPoints}`);
     setAnswer("");
   }
 
