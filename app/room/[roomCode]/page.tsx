@@ -205,16 +205,18 @@ export default function RoomPage() {
     }
 
     const currentScore = room.players?.[uid]?.score || 0;
-const earnedPoints = Math.max(1, Math.ceil(timeLeft / 5));
+const earnedPoints =
+  timeLeft >= 11 ? 3 :
+  timeLeft >= 6 ? 2 :
+  1;
 
-    await update(ref(db, `rooms/${roomCode}`), {
-      [[`players/${uid}/score`]: currentScore + Math.max(1, Math.ceil(timeLeft / 5)),
-      [`roundAnswers/${questionKey}/${uid}`]: true,
-    });
+await update(ref(db, `rooms/${roomCode}`), {
+  [`players/${uid}/score`]: currentScore + earnedPoints,
+  [`roundAnswers/${questionKey}/${uid}`]: true,
+});
 
-    const earnedPoints = Math.max(1, Math.ceil(timeLeft / 5));
 alert(`Correct! +${earnedPoints} points`);
-    setAnswer("");
+setAnswer("");
   }
 
   if (room === undefined) {
