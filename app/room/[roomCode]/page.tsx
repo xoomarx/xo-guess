@@ -54,41 +54,35 @@ export default function RoomPage() {
   const [scorePopups, setScorePopups] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
-const [soundEnabled, setSoundEnabled] = useState(false);
-const [lastPhase, setLastPhase] = useState<string | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [lastPhase, setLastPhase] = useState<string | null>(null);
+  const [gameEnded, setGameEnded] = useState(false);
 
   const isHost = Boolean(uid && room?.hostId === uid);
-function playSound(file: string) {
-  if (!soundEnabled) return;
 
-  const audio = new Audio(`/sounds/${file}`);
-  audio.volume = 0.6;
-  audio.play().catch((error) => {
-    console.log("Sound failed:", error);
-  });
-}
+  function playSound(file: string) {
+    const audio = new Audio(`/sounds/${file}`);
+    audio.volume = 0.6;
+    audio.play().catch((error) => {
+      console.log("Sound failed:", file, error);
+    });
+  }
+
+  function enableSound() {
+    const audio = new Audio("/sounds/correct.mp3");
+    audio.volume = 0.3;
+
+    audio.play().then(() => {
+      setSoundEnabled(true);
+    }).catch((error) => {
+      console.log("Enable sound failed:", error);
+    });
+  }
+
   useEffect(() => {
     const savedName = localStorage.getItem("name");
     if (savedName) setName(savedName);
   }, []);
-useEffect(() => {
-  if (room?.phase === "reveal" && lastPhase !== "reveal") {
-    playSound("timer.mp3");
-    setLastPhase("reveal");
-  }
-
-  if (room?.phase === "question") {
-    setLastPhase("question");
-  }
-}, [room?.phase]);
-const [gameEnded, setGameEnded] = useState(false);
-
-useEffect(() => {
-  if (room?.status === "ended" && !gameEnded) {
-    playSound("gameover.mp3");
-    setGameEnded(true);
-  }
-}, [room?.status]);
 
   useEffect(() => {
     if (auth.currentUser) {
@@ -115,6 +109,28 @@ useEffect(() => {
   }, [roomCode]);
 
   useEffect(() => {
+    if (room?.phase === "reveal" && lastPhase !== "reveal") {
+      if (soundEnabled) playSound("timer.mp3");
+      setLastPhase("reveal");
+    }
+
+    if (room?.phase === "question") {
+      setLastPhase("question");
+    }
+  }, [room?.phase, soundEnabled, lastPhase]);
+
+  useEffect(() => {
+    if (room?.status === "ended" && !gameEnded) {
+      if (soundEnabled) playSound("gameover.mp3");
+      setGameEnded(true);
+    }
+
+    if (room?.status !== "ended") {
+      setGameEnded(false);
+    }
+  }, [room?.status, soundEnabled, gameEnded]);
+
+  useEffect(() => {
     if (!room?.players) return;
 
     const newScores: Record<string, number> = {};
@@ -138,37 +154,24 @@ useEffect(() => {
         if (gained > 0) {
           let current = oldScore;
 
-          setJustScored((currentState) => ({
-            ...currentState,
-            [playerName]: true,
-          }));
-
-          setScorePopups((currentState) => ({
-            ...currentState,
-            [playerName]: gained,
-          }));
+          setJustScored((s) => ({ ...s, [playerName]: true }));
+          setScorePopups((s) => ({ ...s, [playerName]: gained }));
 
           const interval = setInterval(() => {
             current += 1;
 
-            setDisplayScores((currentState) => ({
-              ...currentState,
+            setDisplayScores((s) => ({
+              ...s,
               [playerName]: current,
             }));
 
-            if (current >= score) {
-              clearInterval(interval);
-            }
+            if (current >= score) clearInterval(interval);
           }, 120);
 
           setTimeout(() => {
-            setJustScored((currentState) => ({
-              ...currentState,
-              [playerName]: false,
-            }));
-
-            setScorePopups((currentState) => {
-              const copy = { ...currentState };
+            setJustScored((s) => ({ ...s, [playerName]: false }));
+            setScorePopups((s) => {
+              const copy = { ...s };
               delete copy[playerName];
               return copy;
             });
@@ -324,13 +327,12 @@ useEffect(() => {
 
     const correct = isCorrectAnswer(answer, room.currentQuestion);
 
-    
-  if (!correct) {
-  playSound("wrong.mp3");
-  setAnswer("");
-  setFeedback("Wrong answer, try again");
-  return;
-}
+    if (!correct) {
+      playSound("wrong.mp3");
+      setAnswer("");
+      setFeedback("Wrong answer, try again");
+      return;
+    }
 
     const currentScore = room.players?.[uid]?.score || 0;
 
@@ -350,8 +352,8 @@ useEffect(() => {
     });
 
     playSound("correct.mp3");
-setFeedback("");
-setAnswer("");
+    setFeedback("");
+    setAnswer("");
   }
 
   if (room === undefined) {
@@ -407,25 +409,18 @@ setAnswer("");
         <h1 style={styles.title}>Logo & Flag Rush</h1>
         <p style={styles.room}>Room: {roomCode}</p>
 
-        <button
-          onClick={() => navigator.clipboard.writeText(window.location.href)}
-          style={styles.secondaryButton}
-        >
-          Copy invite link
-<button
-  onClick={() => {
-    const audio = new Audio("/sounds/correct.mp3");
-    audio.volume = 0.2;
+        <div style={styles.buttonRow}>
+          <button
+            onClick={() => navigator.clipboard.writeText(window.location.href)}
+            style={styles.secondaryButton}
+          >
+            Copy invite link
+          </button>
 
-    audio.play().then(() => {
-      setSoundEnabled(true);
-    });
-  }}
-  style={styles.secondaryButton}
->
-  {soundEnabled ? "Sound enabled" : "Enable sound"}
-</button>
-        </button>
+          <button onClick={enableSound} style={styles.secondaryButton}>
+            {soundEnabled ? "Sound enabled" : "Enable sound"}
+          </button>
+        </div>
 
         {room.status !== "playing" && room.status !== "ended" && (
           <div style={styles.section}>
@@ -504,9 +499,7 @@ setAnswer("");
               style={styles.input}
             />
 
-            {feedback && (
-              <p style={styles.feedback}>{feedback}</p>
-            )}
+            {feedback && <p style={styles.feedback}>{feedback}</p>}
 
             <button
               onClick={submitAnswer}
@@ -590,6 +583,11 @@ const styles: Record<string, CSSProperties> = {
   },
   room: {
     color: "#94a3b8",
+  },
+  buttonRow: {
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
   },
   section: {
     marginTop: 28,
