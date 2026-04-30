@@ -7,15 +7,18 @@ import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "../../../lib/firebase";
 import { getRandomQuestion, isCorrectAnswer } from "../../../lib/questions";
 
+const TIMER_SECONDS = 15;
+
 type Player = {
   name: string;
   score: number;
 };
 
 type Question = {
-  type: string;
+  type: "flag" | "logo";
   imageUrl: string;
   answer: string;
+  acceptedAnswers: string[];
 };
 
 type Room = {
@@ -24,6 +27,8 @@ type Room = {
   currentQuestion?: Question;
   questionIndex?: number;
   usedQuestionIndexes?: number[];
+  roundStartedAt?: number;
+  roundAnswers?: Record<string, Record<string, boolean>>;
   players?: Record<string, Player>;
 };
 
@@ -35,6 +40,7 @@ export default function RoomPage() {
   const [uid, setUid] = useState("");
   const [name, setName] = useState("");
   const [answer, setAnswer] = useState("");
+  const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
 
   useEffect(() => {
     const savedName = localStorage.getItem("name");
@@ -65,6 +71,18 @@ export default function RoomPage() {
     return () => unsubscribe();
   }, [roomCode]);
 
+  useEffect(() => {
+    if (room?.status !== "playing" || !room.roundStartedAt) return;
+
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - room.roundStartedAt!) / 1000);
+      const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
+      setTimeLeft(remaining);
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, [room?.status, room?.roundStartedAt]);
+
   async function joinRoom() {
     if (!uid) return;
 
@@ -86,41 +104,64 @@ export default function RoomPage() {
   async function startGame() {
     const random = getRandomQuestion([]);
 
-  await update(ref(db, `rooms/${roomCode}`), {
-    status: "playing",
-    questionIndex: random.index,
-    usedQuestionIndexes: [random.index],
-    currentQuestion: random.question,
-  });
-}
+    await update(ref(db, `rooms/${roomCode}`), {
+      status: "playing",
+      questionIndex: random.index,
+      usedQuestionIndexes: [random.index],
+      currentQuestion: random.question,
+      roundStartedAt: Date.now(),
+      roundAnswers: {},
+    });
+
+    setAnswer("");
+  }
 
   async function nextQuestion() {
-    onst used = room?.usedQuestionIndexes || [];
-  const random = getRandomQuestion(used);
+    const used = room?.usedQuestionIndexes || [];
+    const random = getRandomQuestion(used);
 
-  await update(ref(db, `rooms/${roomCode}`), {
-    questionIndex: random.index,
-    usedQuestionIndexes: [...used, random.index],
-    currentQuestion: random.question,
-  });
+    await update(ref(db, `rooms/${roomCode}`), {
+      questionIndex: random.index,
+      usedQuestionIndexes: [...used, random.index],
+      currentQuestion: random.question,
+      roundStartedAt: Date.now(),
+    });
 
-  setAnswer("");
-}
+    setAnswer("");
+  }
 
   async function submitAnswer() {
     if (!room?.currentQuestion) return;
     if (!uid) return;
 
-    const correct =
-      const correct = isCorrectAnswer(answer, room.currentQuestion);    if (!correct) {
+    if (timeLeft <= 0) {
+      alert("Time is up!");
+      return;
+    }
+
+    const questionKey = String(room.questionIndex);
+    const alreadyAnswered = room.roundAnswers?.[questionKey]?.[uid];
+
+    if (alreadyAnswered) {
+      alert("You already answered this round.");
+      return;
+    }
+
+    const correct = isCorrectAnswer(answer, room.currentQuestion);
+
+    if (!correct) {
       alert("Wrong answer");
+      await update(ref(db, `rooms/${roomCode}/roundAnswers/${questionKey}`), {
+        [uid]: true,
+      });
       return;
     }
 
     const currentScore = room.players?.[uid]?.score || 0;
 
-    await update(ref(db, `rooms/${roomCode}/players/${uid}`), {
-      score: currentScore + 1,
+    await update(ref(db, `rooms/${roomCode}`), {
+      [`players/${uid}/score`]: currentScore + 1,
+      [`roundAnswers/${questionKey}/${uid}`]: true,
     });
 
     alert("Correct! +1 point");
@@ -129,14 +170,7 @@ export default function RoomPage() {
 
   if (room === undefined) {
     return (
-      <main
-        style={{
-          padding: 40,
-          color: "white",
-          background: "#0f172a",
-          height: "100vh",
-        }}
-      >
+      <main style={styles.page}>
         <h1>Loading room...</h1>
       </main>
     );
@@ -144,14 +178,7 @@ export default function RoomPage() {
 
   if (room === null) {
     return (
-      <main
-        style={{
-          padding: 40,
-          color: "white",
-          background: "#0f172a",
-          height: "100vh",
-        }}
-      >
+      <main style={styles.page}>
         <h1>Room not found</h1>
       </main>
     );
@@ -159,116 +186,212 @@ export default function RoomPage() {
 
   const players = Object.values(room.players || {});
   const isHost = uid === room.hostId;
+  const questionKey = String(room.questionIndex);
+  const alreadyAnswered = uid ? room.roundAnswers?.[questionKey]?.[uid] : false;
 
   return (
-    <main
-      style={{
-        padding: 40,
-        color: "white",
-        background: "#0f172a",
-        minHeight: "100vh",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <h1>Room: {roomCode}</h1>
+    <main style={styles.page}>
+      <section style={styles.card}>
+        <h1 style={styles.title}>Logo & Flag Rush</h1>
+        <p style={styles.room}>Room: {roomCode}</p>
 
-      <p>Share this link with your friends:</p>
-      <p>{typeof window !== "undefined" ? window.location.href : ""}</p>
+        <button
+          onClick={() => navigator.clipboard.writeText(window.location.href)}
+          style={styles.secondaryButton}
+        >
+          Copy invite link
+        </button>
 
-      <hr style={{ margin: "20px 0" }} />
+        {room.status !== "playing" && (
+          <div style={styles.section}>
+            <h2>Join Room</h2>
 
-      {room.status !== "playing" && (
-        <>
-          <h2>Join Room</h2>
-
-          <input
-            placeholder="Your name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            style={{ padding: 10 }}
-          />
-
-          <button onClick={joinRoom} style={{ padding: 10, marginLeft: 10 }}>
-            Join
-          </button>
-
-          <br />
-          <br />
-
-          {isHost && (
-            <button
-              onClick={startGame}
-              style={{
-                padding: 12,
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              Start Game
-            </button>
-          )}
-        </>
-      )}
-
-      {room.status === "playing" && room.currentQuestion && (
-        <>
-          <h2>Guess this {room.currentQuestion.type}</h2>
-
-          <div
-            style={{
-              background: "white",
-              padding: 30,
-              width: 300,
-              marginTop: 20,
-              borderRadius: 12,
-            }}
-          >
-            <img
-              src={room.currentQuestion.imageUrl}
-              alt="Guess"
-              style={{ width: "100%" }}
-            />
-          </div>
-
-          <div style={{ marginTop: 20 }}>
             <input
-              placeholder="Your answer"
+              placeholder="Your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={styles.input}
+            />
+
+            <button onClick={joinRoom} style={styles.button}>
+              Join
+            </button>
+
+            {isHost && (
+              <button onClick={startGame} style={styles.startButton}>
+                Start Game
+              </button>
+            )}
+          </div>
+        )}
+
+        {room.status === "playing" && room.currentQuestion && (
+          <div style={styles.section}>
+            <div style={styles.topRow}>
+              <h2>Guess the {room.currentQuestion.type}</h2>
+              <div style={styles.timer}>{timeLeft}s</div>
+            </div>
+
+            <div style={styles.imageBox}>
+              <img
+                src={room.currentQuestion.imageUrl}
+                alt="Guess"
+                style={styles.image}
+              />
+            </div>
+
+            {timeLeft === 0 && (
+              <h2 style={{ color: "#38bdf8" }}>
+                Answer: {room.currentQuestion.answer}
+              </h2>
+            )}
+
+            <input
+              placeholder={
+                alreadyAnswered ? "Already answered" : "Type your answer"
+              }
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
-              style={{ padding: 10 }}
+              disabled={timeLeft === 0 || !!alreadyAnswered}
+              style={styles.input}
             />
 
             <button
               onClick={submitAnswer}
-              style={{ padding: 10, marginLeft: 10 }}
+              disabled={timeLeft === 0 || !!alreadyAnswered}
+              style={styles.button}
             >
               Submit
             </button>
+
+            {isHost && (
+              <button onClick={nextQuestion} style={styles.startButton}>
+                Next Random Question
+              </button>
+            )}
           </div>
+        )}
 
-          {isHost && (
-            <button
-              onClick={nextQuestion}
-              style={{
-                padding: 12,
-                marginTop: 20,
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              Next Question
-            </button>
-          )}
-        </>
-      )}
+        <div style={styles.section}>
+          <h2>Players</h2>
 
-      <h2 style={{ marginTop: 30 }}>Players</h2>
-
-      {players.map((player, index) => (
-        <p key={index}>
-          {player.name} — {player.score} pts
-        </p>
-      ))}
+          {players
+            .sort((a, b) => b.score - a.score)
+            .map((player, index) => (
+              <div key={index} style={styles.player}>
+                <span>
+                  #{index + 1} {player.name}
+                </span>
+                <strong>{player.score} pts</strong>
+              </div>
+            ))}
+        </div>
+      </section>
     </main>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    background: "linear-gradient(135deg, #020617, #1e293b)",
+    color: "white",
+    fontFamily: "Arial, sans-serif",
+    padding: 24,
+  },
+  card: {
+    maxWidth: 760,
+    margin: "0 auto",
+    background: "#0f172a",
+    border: "1px solid #334155",
+    borderRadius: 24,
+    padding: 28,
+    boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+  },
+  title: {
+    fontSize: 42,
+    marginBottom: 8,
+  },
+  room: {
+    color: "#94a3b8",
+  },
+  section: {
+    marginTop: 28,
+  },
+  topRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 16,
+  },
+  timer: {
+    background: "#22d3ee",
+    color: "#020617",
+    fontWeight: "bold",
+    fontSize: 28,
+    padding: "10px 18px",
+    borderRadius: 16,
+  },
+  imageBox: {
+    background: "white",
+    borderRadius: 20,
+    padding: 32,
+    marginTop: 20,
+    marginBottom: 20,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 220,
+  },
+  image: {
+    maxWidth: "100%",
+    maxHeight: 180,
+    objectFit: "contain",
+  },
+  input: {
+    padding: 12,
+    borderRadius: 12,
+    border: "none",
+    marginRight: 10,
+    marginTop: 10,
+    minWidth: 220,
+  },
+  button: {
+    padding: "12px 18px",
+    borderRadius: 12,
+    border: "none",
+    background: "#38bdf8",
+    color: "#020617",
+    fontWeight: "bold",
+    cursor: "pointer",
+    marginTop: 10,
+  },
+  startButton: {
+    display: "block",
+    marginTop: 18,
+    padding: "14px 22px",
+    borderRadius: 14,
+    border: "none",
+    background: "#a3e635",
+    color: "#020617",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+  secondaryButton: {
+    padding: "10px 14px",
+    borderRadius: 12,
+    border: "1px solid #475569",
+    background: "#1e293b",
+    color: "white",
+    cursor: "pointer",
+  },
+  player: {
+    display: "flex",
+    justifyContent: "space-between",
+    background: "#1e293b",
+    border: "1px solid #334155",
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 10,
+  },
+};
