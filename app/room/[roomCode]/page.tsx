@@ -64,11 +64,6 @@ function playSound(file: string) {
     console.log("Sound failed:", error);
   });
 }
-function playSound(file: string) {
-  const audio = new Audio(`/sounds/${file}`);
-  audio.volume = 0.5;
-  audio.play().catch(() => {});
-}
 
   useEffect(() => {
     const savedName = localStorage.getItem("name");
@@ -327,7 +322,7 @@ useEffect(() => {
 
     const correct = isCorrectAnswer(answer, room.currentQuestion);
 
-    if (!correct) {
+    
   if (!correct) {
   playSound("wrong.mp3");
   setAnswer("");
@@ -352,9 +347,9 @@ useEffect(() => {
       },
     });
 
-    setFeedback("");
-    setAnswer("");
-playSound("correct.mp3");
+    splaySound("correct.mp3");
+setFeedback("");
+setAnswer("");
   }
 
   if (room === undefined) {
