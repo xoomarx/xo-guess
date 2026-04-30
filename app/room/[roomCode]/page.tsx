@@ -41,17 +41,13 @@ export default function RoomPage() {
   }, []);
 
   useEffect(() => {
-    async function login() {
-      if (auth.currentUser) {
-        setUid(auth.currentUser.uid);
-        return;
-      }
-
-      const result = await signInAnonymously(auth);
-      setUid(result.user.uid);
+    if (auth.currentUser) {
+      setUid(auth.currentUser.uid);
+    } else {
+      signInAnonymously(auth).then((result) => {
+        setUid(result.user.uid);
+      });
     }
-
-    login();
   }, []);
 
   useEffect(() => {

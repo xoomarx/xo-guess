@@ -20,26 +20,43 @@ export default function Home() {
       return;
     }
 
-    const user = await signInAnonymously(auth);
+    let user;
+
+    if (auth.currentUser) {
+      user = { user: auth.currentUser };
+    } else {
+      user = await signInAnonymously(auth);
+    }
+
     const roomCode = createRoomCode();
 
     await set(ref(db, `rooms/${roomCode}`), {
       hostId: user.user.uid,
+      status: "lobby",
+      questionIndex: 0,
       players: {
         [user.user.uid]: {
-          name,
+          name: name.trim(),
           score: 0,
         },
       },
     });
 
-    localStorage.setItem("name", name);
+    localStorage.setItem("name", name.trim());
 
     router.push(`/room/${roomCode}`);
   }
 
   return (
-    <main style={{ padding: 40, color: "white", background: "#0f172a", height: "100vh" }}>
+    <main
+      style={{
+        padding: 40,
+        color: "white",
+        background: "#0f172a",
+        height: "100vh",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
       <h1 style={{ fontSize: 40 }}>Logo & Flag Game</h1>
 
       <input
@@ -49,7 +66,8 @@ export default function Home() {
         style={{ padding: 10, marginTop: 20 }}
       />
 
-      <br /><br />
+      <br />
+      <br />
 
       <button onClick={createRoom} style={{ padding: 10 }}>
         Create Game
