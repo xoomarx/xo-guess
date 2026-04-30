@@ -10,6 +10,7 @@ import { getRandomQuestion, isCorrectAnswer } from "../../../lib/questions";
 
 const TIMER_SECONDS = 15;
 const TOTAL_ROUNDS = 10;
+const REVEAL_SECONDS = 3;
 
 type Player = {
   name: string;
@@ -32,6 +33,8 @@ type Room = {
   roundStartedAt?: number;
   roundNumber?: number;
   totalRounds?: number;
+phase?: "question" | "reveal";
+revealStartedAt?: number;
   roundAnswers?: Record<string, Record<string, boolean>>;
   players?: Record<string, Player>;
 };
@@ -88,33 +91,53 @@ export default function RoomPage() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (room?.status !== "playing" || !room.roundStartedAt) return;
+ useEffect(() => {
+  if (room?.status !== "playing") return;
 
-    const interval = setInterval(() => {
-      const serverNow = Date.now() + serverOffset;
-      const elapsed = Math.floor((serverNow - room.roundStartedAt!) / 1000);
-      const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
+  const interval = setInterval(() => {
+    const serverNow = Date.now() + serverOffset;
+
+    if (room.phase === "reveal" && room.revealStartedAt) {
+      const elapsed = Math.floor((serverNow - room.revealStartedAt) / 1000);
+      const remaining = Math.max(REVEAL_SECONDS - elapsed, 0);
 
       setTimeLeft(remaining);
 
       if (remaining === 0 && isHost) {
         clearInterval(interval);
-
-        setTimeout(() => {
-          nextQuestion();
-        }, 2500);
+        nextQuestion();
       }
-    }, 300);
 
-    return () => clearInterval(interval);
-  }, [
-    room?.status,
-    room?.roundStartedAt,
-    room?.questionIndex,
-    serverOffset,
-    isHost,
-  ]);
+      return;
+    }
+
+    if (!room.roundStartedAt) return;
+
+    const elapsed = Math.floor((serverNow - room.roundStartedAt) / 1000);
+    const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
+
+    setTimeLeft(remaining);
+
+    if (remaining === 0 && isHost && room.phase !== "reveal") {
+      clearInterval(interval);
+
+      update(ref(db, `rooms/${roomCode}`), {
+        phase: "reveal",
+        revealStartedAt: serverTimestamp(),
+      });
+    }
+  }, 300);
+
+  return () => clearInterval(interval);
+}, [
+  room?.status,
+  room?.roundStartedAt,
+  room?.revealStartedAt,
+  room?.phase,
+  room?.questionIndex,
+  serverOffset,
+  isHost,
+]);;
 
   async function joinRoom() {
     if (!uid) return;
@@ -146,6 +169,9 @@ export default function RoomPage() {
       currentQuestion: random.question,
       roundStartedAt: serverTimestamp(),
       roundAnswers: {},
+phase: "question",
+revealStartedAt: null,
+
     });
 
     setAnswer("");
@@ -171,6 +197,8 @@ export default function RoomPage() {
       usedQuestionIndexes: [...used, random.index],
       currentQuestion: random.question,
       roundStartedAt: serverTimestamp(),
+phase: "question",
+revealStartedAt: null,
     });
 
     setAnswer("");
@@ -178,6 +206,7 @@ export default function RoomPage() {
 
   async function submitAnswer() {
     if (!room?.currentQuestion) return;
+if (room.phase === "reveal") return;
     if (!uid) return;
 
     if (timeLeft <= 0) {
@@ -300,17 +329,18 @@ export default function RoomPage() {
               />
             </div>
 
-            {timeLeft === 0 && (
-              <h2 style={{ color: "#38bdf8" }}>
-                Answer: {room.currentQuestion.answer}
-              </h2>
-            )}
-
+            {room.phase === "reveal" && (
+  <div style={styles.revealBox}>
+    <p style={styles.revealLabel}>Correct answer</p>
+    <h2 style={styles.revealAnswer}>{room.currentQuestion.answer}</h2>
+    <p style={styles.revealNext}>Next question in {timeLeft}s</p>
+  </div>
+)}
             <input
               placeholder={alreadyAnswered ? "Already answered" : "Type your answer"}
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
-              disabled={timeLeft === 0 || !!alreadyAnswered}
+              disabled={room.phase === "reveal" || timeLeft === 0 || !!alreadyAnswered}
               style={styles.input}
             />
 
@@ -450,6 +480,27 @@ const styles: Record<string, CSSProperties> = {
     color: "white",
     cursor: "pointer",
   },
+revealBox: {
+  background: "#082f49",
+  border: "1px solid #38bdf8",
+  borderRadius: 18,
+  padding: 20,
+  marginBottom: 18,
+  textAlign: "center",
+},
+revealLabel: {
+  color: "#bae6fd",
+  margin: 0,
+},
+revealAnswer: {
+  color: "#facc15",
+  fontSize: 34,
+  margin: "8px 0",
+},
+revealNext: {
+  color: "#cbd5e1",
+  margin: 0,
+},
   player: {
     display: "flex",
     justifyContent: "space-between",
