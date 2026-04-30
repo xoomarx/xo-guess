@@ -50,6 +50,7 @@ export default function RoomPage() {
 const [feedback, setFeedback] = useState("");
 const [prevScores, setPrevScores] = useState<Record<string, number>>({});
 const [justScored, setJustScored] = useState<Record<string, boolean>>({});
+const [displayScores, setDisplayScores] = useState<Record<string, number>>({});
 const [scorePopups, setScorePopups] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
@@ -72,6 +73,17 @@ const [scorePopups, setScorePopups] = useState<Record<string, number>>({});
   }, []);
 useEffect(() => {
   if (!room?.players) return;
+setDisplayScores((prev) => {
+  const updated = { ...prev };
+
+  Object.values(room.players).forEach((player) => {
+    if (updated[player.name] === undefined) {
+      updated[player.name] = player.score;
+    }
+  });
+
+  return updated;
+});
 
   const newScores: Record<string, number> = {};
 
@@ -91,18 +103,34 @@ useEffect(() => {
       const gained = score - oldScore;
 
       if (gained > 0) {
-        setJustScored((s) => ({ ...s, [name]: true }));
-        setScorePopups((s) => ({ ...s, [name]: gained }));
+  let current = prev[name] ?? 0;
+  const target = score;
 
-        setTimeout(() => {
-          setJustScored((s) => ({ ...s, [name]: false }));
-          setScorePopups((s) => {
-            const copy = { ...s };
-            delete copy[name];
-            return copy;
-          });
-        }, 1200);
-      }
+  const interval = setInterval(() => {
+    current += 1;
+
+    setDisplayScores((s) => ({
+      ...s,
+      [name]: current,
+    }));
+
+    if (current >= target) {
+      clearInterval(interval);
+    }
+  }, 80);
+
+  setJustScored((s) => ({ ...s, [name]: true }));
+  setScorePopups((s) => ({ ...s, [name]: gained }));
+
+  setTimeout(() => {
+    setJustScored((s) => ({ ...s, [name]: false }));
+    setScorePopups((s) => {
+      const copy = { ...s };
+      delete copy[name];
+      return copy;
+    });
+  }, 1200);
+}
     });
 
     return newScores;
@@ -453,7 +481,9 @@ const correctPlayers = correctPlayerIds
                   #{index + 1} {player.name}
                 </span>
 <div style={styles.scoreContainer}>
-  <strong>{player.score} pts</strong>
+  <strong>
+  {(displayScores[player.name] ?? player.score)} pts
+</strong>
 
   {scorePopups[player.name] && (
     <span style={styles.pointsPopup}>
