@@ -8,6 +8,8 @@ import { auth, db } from "../../../lib/firebase";
 import { getRandomQuestion, isCorrectAnswer } from "../../../lib/questions";
 
 const TIMER_SECONDS = 15;
+const REVEAL_SECONDS = 3;
+const TOTAL_ROUNDS = 10;
 
 type Player = {
   name: string;
@@ -23,15 +25,22 @@ type Question = {
 
 type Room = {
   hostId: string;
-  status?: "lobby" | "playing";
+
+  status?: "lobby" | "playing" | "reveal" | "ended";
+
   currentQuestion?: Question;
   questionIndex?: number;
   usedQuestionIndexes?: number[];
+
+  roundNumber?: number;
+  totalRounds?: number;
+
   roundStartedAt?: number;
+  revealStartedAt?: number;
+
   roundAnswers?: Record<string, Record<string, boolean>>;
   players?: Record<string, Player>;
 };
-
 export default function RoomPage() {
   const params = useParams();
   const roomCode = params.roomCode as string;
@@ -41,7 +50,17 @@ export default function RoomPage() {
   const [name, setName] = useState("");
   const [answer, setAnswer] = useState("");
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
+const [serverOffset, setServerOffset] = useState(0);
 
+useEffect(() => {
+  const offsetRef = ref(db, ".info/serverTimeOffset");
+
+  const unsubscribe = onValue(offsetRef, (snapshot) => {
+    setServerOffset(snapshot.val() || 0);
+  });
+
+  return () => unsubscribe();
+}, []);
   useEffect(() => {
     const savedName = localStorage.getItem("name");
     if (savedName) setName(savedName);
@@ -71,17 +90,19 @@ export default function RoomPage() {
     return () => unsubscribe();
   }, [roomCode]);
 
-  useEffect(() => {
-    if (room?.status !== "playing" || !room.roundStartedAt) return;
+  uuseEffect(() => {
+  if (room?.status !== "playing" || !room.roundStartedAt) return;
 
-    const interval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - room.roundStartedAt!) / 1000);
-      const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
-      setTimeLeft(remaining);
-    }, 300);
+  const interval = setInterval(() => {
+    const serverNow = Date.now() + serverOffset;
+    const elapsed = Math.floor((serverNow - room.roundStartedAt!) / 1000);
+    const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
 
-    return () => clearInterval(interval);
-  }, [room?.status, room?.roundStartedAt]);
+    setTimeLeft(remaining);
+  }, 300);
+
+  return () => clearInterval(interval);
+}, [room?.status, room?.roundStartedAt, serverOffset]);;
 
   async function joinRoom() {
     if (!uid) return;
@@ -102,19 +123,21 @@ export default function RoomPage() {
   }
 
   async function startGame() {
-    const random = getRandomQuestion([]);
+  const random = getRandomQuestion([]);
 
-    await update(ref(db, `rooms/${roomCode}`), {
-      status: "playing",
-      questionIndex: random.index,
-      usedQuestionIndexes: [random.index],
-      currentQuestion: random.question,
-      roundStartedAt: Date.now(),
-      roundAnswers: {},
-    });
+  await update(ref(db, `rooms/${roomCode}`), {
+    status: "playing",
+    questionIndex: random.index,
+    roundNumber: 1,
+    totalRounds: TOTAL_ROUNDS,
+    usedQuestionIndexes: [random.index],
+    currentQuestion: random.question,
+    roundStartedAt: Date.now(),
+    roundAnswers: {},
+  });
 
-    setAnswer("");
-  }
+  setAnswer("");
+}
 
   async function nextQuestion() {
     const used = room?.usedQuestionIndexes || [];
