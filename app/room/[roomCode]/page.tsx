@@ -73,17 +73,6 @@ const [scorePopups, setScorePopups] = useState<Record<string, number>>({});
   }, []);
 useEffect(() => {
   if (!room?.players) return;
-setDisplayScores((prev) => {
-  const updated = { ...prev };
-
-  Object.values(room.players).forEach((player) => {
-    if (updated[player.name] === undefined) {
-      updated[player.name] = player.score;
-    }
-  });
-
-  return updated;
-});
 
   const newScores: Record<string, number> = {};
 
@@ -92,50 +81,48 @@ setDisplayScores((prev) => {
   });
 
   setPrevScores((prev) => {
-    const hasPreviousScores = Object.keys(prev).length > 0;
-
-    if (!hasPreviousScores) {
-      return newScores;
-    }
-
     Object.entries(newScores).forEach(([name, score]) => {
       const oldScore = prev[name] ?? 0;
       const gained = score - oldScore;
 
       if (gained > 0) {
-  let current = prev[name] ?? 0;
-  const target = score;
+        let current = oldScore;
 
-  const interval = setInterval(() => {
-    current += 1;
+        const interval = setInterval(() => {
+          current += 1;
 
-    setDisplayScores((s) => ({
-      ...s,
-      [name]: current,
-    }));
+          setDisplayScores((s) => ({
+            ...s,
+            [name]: current,
+          }));
 
-    if (current >= target) {
-      clearInterval(interval);
-    }
-  }, 80);
+          if (current >= score) {
+            clearInterval(interval);
+          }
+        }, 90);
 
-  setJustScored((s) => ({ ...s, [name]: true }));
-  setScorePopups((s) => ({ ...s, [name]: gained }));
+        setJustScored((s) => ({ ...s, [name]: true }));
+        setScorePopups((s) => ({ ...s, [name]: gained }));
 
-  setTimeout(() => {
-    setJustScored((s) => ({ ...s, [name]: false }));
-    setScorePopups((s) => {
-      const copy = { ...s };
-      delete copy[name];
-      return copy;
-    });
-  }, 1200);
-}
+        setTimeout(() => {
+          setJustScored((s) => ({ ...s, [name]: false }));
+          setScorePopups((s) => {
+            const copy = { ...s };
+            delete copy[name];
+            return copy;
+          });
+        }, 1200);
+      } else {
+        setDisplayScores((s) => ({
+          ...s,
+          [name]: score,
+        }));
+      }
     });
 
     return newScores;
   });
-}, [room?.players]);
+}, [room?.players]);}, [room?.players]);
   useEffect(() => {
     const roomRef = ref(db, `rooms/${roomCode}`);
 
