@@ -75,25 +75,22 @@ useEffect(() => {
 
   const newScores: Record<string, number> = {};
 
-  Object.entries(room.players).forEach(([id, player]) => {
-    newScores[id] = player.score;
+  Object.values(room.players).forEach((player) => {
+    newScores[player.name] = player.score;
   });
 
   setPrevScores((prev) => {
-    const updated = { ...newScores };
-
-    Object.entries(newScores).forEach(([id, score]) => {
-      if (prev[id] !== undefined && score > prev[id]) {
-        // mark player as "just scored"
-        setJustScored((s) => ({ ...s, [id]: true }));
+    Object.entries(newScores).forEach(([name, score]) => {
+      if (score > (prev[name] ?? 0)) {
+        setJustScored((s) => ({ ...s, [name]: true }));
 
         setTimeout(() => {
-          setJustScored((s) => ({ ...s, [id]: false }));
+          setJustScored((s) => ({ ...s, [name]: false }));
         }, 1200);
       }
     });
 
-    return updated;
+    return newScores;
   });
 }, [room?.players]);
 
@@ -296,7 +293,7 @@ setFeedback(`✅ Correct! +${earnedPoints} pts`);
       </main>
     );
   }
-const [prevScores, setPrevScores] = useState<Record<string, number>>({});
+
 
   const players = Object.values(room.players || {});
   const questionKey = String(room.questionIndex);
