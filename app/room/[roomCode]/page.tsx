@@ -48,6 +48,9 @@ export default function RoomPage() {
   const [name, setName] = useState("");
   const [answer, setAnswer] = useState("");
 const [feedback, setFeedback] = useState("");
+const [prevScores, setPrevScores] = useState<Record<string, number>>({});
+const [justScored, setJustScored] = useState<Record<string, boolean>>({});
+
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
 
@@ -67,6 +70,32 @@ const [feedback, setFeedback] = useState("");
       });
     }
   }, []);
+useEffect(() => {
+  if (!room?.players) return;
+
+  const newScores: Record<string, number> = {};
+
+  Object.entries(room.players).forEach(([id, player]) => {
+    newScores[id] = player.score;
+  });
+
+  setPrevScores((prev) => {
+    const updated = { ...newScores };
+
+    Object.entries(newScores).forEach(([id, score]) => {
+      if (prev[id] !== undefined && score > prev[id]) {
+        // mark player as "just scored"
+        setJustScored((s) => ({ ...s, [id]: true }));
+
+        setTimeout(() => {
+          setJustScored((s) => ({ ...s, [id]: false }));
+        }, 1200);
+      }
+    });
+
+    return updated;
+  });
+}, [room?.players]);
 
   useEffect(() => {
     const roomRef = ref(db, `rooms/${roomCode}`);
@@ -267,6 +296,7 @@ setFeedback(`✅ Correct! +${earnedPoints} pts`);
       </main>
     );
   }
+const [prevScores, setPrevScores] = useState<Record<string, number>>({});
 
   const players = Object.values(room.players || {});
   const questionKey = String(room.questionIndex);
@@ -386,7 +416,15 @@ const correctPlayers = correctPlayerIds
           {players
             .sort((a, b) => b.score - a.score)
             .map((player, index) => (
-              <div key={index} style={styles.player}>
+              <div
+  key={index}
+  style={{
+    ...styles.player,
+    ...(justScored[player.name]
+      ? styles.playerHighlight
+      : {}),
+  }}
+>
                 <span>
                   #{index + 1} {player.name}
                 </span>
@@ -513,6 +551,12 @@ revealAnswer: {
 revealNext: {
   color: "#cbd5e1",
   margin: 0,
+},
+playerHighlight: {
+  background: "#064e3b",
+  border: "1px solid #22c55e",
+  boxShadow: "0 0 12px #22c55e",
+  transition: "all 0.3s ease",
 },
   player: {
     display: "flex",
