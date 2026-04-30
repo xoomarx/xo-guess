@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useParams } from "next/navigation";
 import { onValue, ref, update, serverTimestamp } from "firebase/database";
@@ -55,30 +55,65 @@ export default function RoomPage() {
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
+const soundsRef = useRef<Record<string, HTMLAudioElement | null>>({
+  correct: null,
+  wrong: null,
+  timer: null,
+  gameover: null,
+});
   const [lastPhase, setLastPhase] = useState<string | null>(null);
   const [gameEnded, setGameEnded] = useState(false);
 
   const isHost = Boolean(uid && room?.hostId === uid);
+const soundsRef = useRef<Record<string, HTMLAudioElement | null>>({
+  correct: null,
+  wrong: null,
+  timer: null,
+  gameover: null,
+});
 
-  function playSound(file: string) {
-    const audio = new Audio(`/sounds/${file}`);
-    audio.volume = 0.6;
-    audio.play().catch((error) => {
-      console.log("Sound failed:", file, error);
-    });
-  }
+function playSound(name: "correct" | "wrong" | "timer" | "gameover") {
+  const audio = soundsRef.current[name];
+
+  if (!audio) return;
+
+  audio.currentTime = 0;
+  audio.play().catch((error) => {
+    console.log("Sound failed:", name, error);
+  });
+}
 
   function enableSound() {
-    const audio = new Audio("/sounds/correct.mp3");
-    audio.volume = 0.3;
+  const audio = soundsRef.current.correct;
 
-    audio.play().then(() => {
+  if (!audio) return;
+
+  audio.currentTime = 0;
+  audio.volume = 0.3;
+
+  audio
+    .play()
+    .then(() => {
       setSoundEnabled(true);
-    }).catch((error) => {
+      audio.volume = 0.6;
+    })
+    .catch((error) => {
       console.log("Enable sound failed:", error);
     });
-  }
+}
+useEffect(() => {
+  soundsRef.current.correct = new Audio("/sounds/correct.mp3");
+  soundsRef.current.wrong = new Audio("/sounds/wrong.mp3");
+  soundsRef.current.timer = new Audio("/sounds/timer.mp3");
+  soundsRef.current.gameover = new Audio("/sounds/gameover.mp3");
 
+  Object.values(soundsRef.current).forEach((audio) => {
+    if (audio) {
+      audio.volume = 0.6;
+      audio.preload = "auto";
+    }
+  });
+}, []);
   useEffect(() => {
     const savedName = localStorage.getItem("name");
     if (savedName) setName(savedName);
@@ -110,7 +145,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (room?.phase === "reveal" && lastPhase !== "reveal") {
-      if (soundEnabled) playSound("timer.mp3");
+      if (soundEnabled) playSound("timer");
       setLastPhase("reveal");
     }
 
@@ -121,7 +156,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (room?.status === "ended" && !gameEnded) {
-      if (soundEnabled) playSound("gameover.mp3");
+      if (soundEnabled) playSound("gameover");
       setGameEnded(true);
     }
 
@@ -328,7 +363,7 @@ export default function RoomPage() {
     const correct = isCorrectAnswer(answer, room.currentQuestion);
 
     if (!correct) {
-      playSound("wrong.mp3");
+      playSound("wrong");
       setAnswer("");
       setFeedback("Wrong answer, try again");
       return;
@@ -351,7 +386,7 @@ export default function RoomPage() {
       },
     });
 
-    playSound("correct.mp3");
+    playSound("correct");
     setFeedback("");
     setAnswer("");
   }
