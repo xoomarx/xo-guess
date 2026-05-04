@@ -91,24 +91,25 @@ export default function RoomPage() {
   }, []);
 
   function playSound(name: SoundName) {
-    const audio = soundsRef.current[name];
-
-    if (!audio) {
-      console.log("Sound not loaded:", name);
-      return;
-    }
-
-    if (!soundEnabled) {
-      console.log("Sound is disabled. Click the Sound button first.");
-      return;
-    }
-
-    audio.currentTime = 0;
-    audio.volume = 0.6;
-    audio.play().catch((error) => {
-      console.log("Sound failed:", name, error);
-    });
+  if (!soundEnabled) {
+    console.log("Sound is disabled");
+    return;
   }
+
+  const files: Record<SoundName, string> = {
+    correct: "/sounds/correct.mp3",
+    wrong: "/sounds/wrong.mp3",
+    timer: "/sounds/timer.mp3",
+    gameover: "/sounds/gameover.mp3",
+  };
+
+  const audio = new Audio(files[name]);
+  audio.volume = 0.6;
+
+  audio.play().catch((error) => {
+    console.log("Sound failed:", name, error);
+  });
+}
 
   function enableSound() {
     const audio = soundsRef.current.correct;
