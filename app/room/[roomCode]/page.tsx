@@ -74,44 +74,46 @@ export default function RoomPage() {
   const [copied, setCopied] = useState(false);
   const confettiRef = useRef(false);
 
-  const soundsRef = useRef<Record<SoundName, HTMLAudioElement | null>>({
-    correct: null, wrong: null, timer: null, gameover: null,
-  });
-
+  
   const isHost = Boolean(uid && room?.hostId === uid);
 
-  useEffect(() => {
-    // Note: file is correct.mp3 in the sounds folder
-    soundsRef.current.correct = new Audio("/sounds/correct.mp3");
-    soundsRef.current.wrong = new Audio("/sounds/wrong.mp3");
-    soundsRef.current.timer = new Audio("/sounds/timer.mp3");
-    soundsRef.current.gameover = new Audio("/sounds/gameover.mp3");
-    Object.values(soundsRef.current).forEach((audio) => {
-      if (audio) { audio.volume = 0.6; audio.preload = "auto"; }
-    });
-  }, []);
+ 
+ function playSound(name: "correct" | "wrong" | "timer" | "gameover") {
+  const files = {
+    correct: "/sounds/correct.mp3",
+    wrong: "/sounds/wrong.mp3",
+    timer: "/sounds/timer.mp3",
+    gameover: "/sounds/gameover.mp3",
+  };
 
-  function playSound(name: SoundName) {
-    const files: Record<SoundName, string> = {
-      correct: "/sounds/correct.mp3",
-      wrong: "/sounds/wrong.mp3",
-      timer: "/sounds/timer.mp3",
-      gameover: "/sounds/gameover.mp3",
-    };
+  const audio = new Audio(files[name]);
+  audio.volume = 1;
 
-    const audio = new Audio(files[name]);
-    audio.volume = 0.8;
-
-    audio.play().catch((error) => {
+  audio
+    .play()
+    .then(() => {
+      console.log("Played sound:", name);
+    })
+    .catch((error) => {
       console.log("Sound failed:", name, error);
     });
-  }
+}
 
   function enableSound() {
-    console.log("ENABLE SOUND CLICKED");
-    setSoundEnabled(true);
-    playSound("correct");
-  }
+  setSoundEnabled(true);
+
+  const audio = new Audio("/sounds/correct.mp3");
+  audio.volume = 1;
+
+  audio
+    .play()
+    .then(() => {
+      console.log("Enable sound worked");
+    })
+    .catch((error) => {
+      console.log("Enable sound failed:", error);
+    });
+}
 
   useEffect(() => {
     const savedName = localStorage.getItem("name");
