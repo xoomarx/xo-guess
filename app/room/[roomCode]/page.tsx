@@ -81,8 +81,7 @@ export default function RoomPage() {
   const isHost = Boolean(uid && room?.hostId === uid);
 
   useEffect(() => {
-    // Note: file is right.mp3 in the sounds folder
-    soundsRef.current.correct = new Audio("/sounds/right.mp3");
+    soundsRef.current.correct = new Audio("/sounds/correct.mp3");
     soundsRef.current.wrong = new Audio("/sounds/wrong.mp3");
     soundsRef.current.timer = new Audio("/sounds/timer.mp3");
     soundsRef.current.gameover = new Audio("/sounds/gameover.mp3");
@@ -93,17 +92,45 @@ export default function RoomPage() {
 
   function playSound(name: SoundName) {
     const audio = soundsRef.current[name];
-    if (!audio || !soundEnabled) return;
+
+    if (!audio) {
+      console.log("Sound not loaded:", name);
+      return;
+    }
+
+    if (!soundEnabled) {
+      console.log("Sound is disabled. Click the Sound button first.");
+      return;
+    }
+
     audio.currentTime = 0;
-    audio.play().catch(() => {});
+    audio.volume = 0.6;
+    audio.play().catch((error) => {
+      console.log("Sound failed:", name, error);
+    });
   }
 
   function enableSound() {
     const audio = soundsRef.current.correct;
-    if (!audio) return;
+
+    if (!audio) {
+      console.log("Correct sound not loaded");
+      return;
+    }
+
     audio.currentTime = 0;
-    audio.volume = 0.2;
-    audio.play().then(() => { audio.volume = 0.6; setSoundEnabled(true); }).catch(() => {});
+    audio.volume = 0.3;
+
+    audio
+      .play()
+      .then(() => {
+        audio.volume = 0.6;
+        setSoundEnabled(true);
+        console.log("Sound enabled");
+      })
+      .catch((error) => {
+        console.log("Enable sound failed:", error);
+      });
   }
 
   useEffect(() => {
