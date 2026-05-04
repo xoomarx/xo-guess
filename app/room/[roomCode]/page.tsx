@@ -81,6 +81,7 @@ export default function RoomPage() {
   const isHost = Boolean(uid && room?.hostId === uid);
 
   useEffect(() => {
+    // Note: file is correct.mp3 in the sounds folder
     soundsRef.current.correct = new Audio("/sounds/correct.mp3");
     soundsRef.current.wrong = new Audio("/sounds/wrong.mp3");
     soundsRef.current.timer = new Audio("/sounds/timer.mp3");
@@ -91,40 +92,25 @@ export default function RoomPage() {
   }, []);
 
   function playSound(name: SoundName) {
-  const files: Record<SoundName, string> = {
-    correct: "/sounds/correct.mp3",
-    wrong: "/sounds/wrong.mp3",
-    timer: "/sounds/timer.mp3",
-    gameover: "/sounds/gameover.mp3",
-  };
+    const files: Record<SoundName, string> = {
+      correct: "/sounds/correct.mp3",
+      wrong: "/sounds/wrong.mp3",
+      timer: "/sounds/timer.mp3",
+      gameover: "/sounds/gameover.mp3",
+    };
 
-  const audio = new Audio(files[name]);
-  audio.volume = 0.8;
+    const audio = new Audio(files[name]);
+    audio.volume = 0.8;
 
-  audio.play().catch((error) => {
-    console.log("Sound failed:", name, error);
-  });
-}
+    audio.play().catch((error) => {
+      console.log("Sound failed:", name, error);
+    });
+  }
 
   function enableSound() {
-  console.log("ENABLE SOUND CLICKED");
-  setSoundEnabled(true);
-  playSound("correct");
-}
-
-    audio.currentTime = 0;
-    audio.volume = 0.3;
-
-    audio
-      .play()
-      .then(() => {
-        audio.volume = 0.6;
-        setSoundEnabled(true);
-        console.log("Sound enabled");
-      })
-      .catch((error) => {
-        console.log("Enable sound failed:", error);
-      });
+    console.log("ENABLE SOUND CLICKED");
+    setSoundEnabled(true);
+    playSound("correct");
   }
 
   useEffect(() => {
@@ -600,15 +586,11 @@ export default function RoomPage() {
                   {copied ? "✓ Copied!" : "🔗 Invite"}
                 </button>
                 <button
-  className={`btn btn-ghost ${soundEnabled ? "btn-sound-on" : ""}`}
-  onClick={() => {
-    console.log("SOUND BUTTON PRESSED");
-    setSoundEnabled(true);
-    playSound("correct");
-  }}
->
-  {soundEnabled ? "🔊 Sound on" : "🔇 Sound off"}
-</button>
+                  className={`btn btn-ghost ${soundEnabled ? "btn-sound-on" : ""}`}
+                  onClick={enableSound}
+                >
+                  {soundEnabled ? "🔊 Sound on" : "🔇 Sound off"}
+                </button>
               </div>
             </div>
 
