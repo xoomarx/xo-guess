@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ref, set } from "firebase/database";
+import { ref, set, get } from "firebase/database";
 import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
 
@@ -12,50 +12,71 @@ function createRoomCode() {
 
 export default function Home() {
   const router = useRouter();
+  const [tab, setTab] = useState<"create" | "join">("create");
   const [name, setName] = useState("");
+  const [joinCode, setJoinCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [joinError, setJoinError] = useState("");
+
+  async function getOrSignIn() {
+    if (auth.currentUser) return auth.currentUser;
+    const result = await signInAnonymously(auth);
+    return result.user;
+  }
 
   async function createRoom() {
     if (!name.trim()) return;
     setLoading(true);
-
-    let user;
-    if (auth.currentUser) {
-      user = { user: auth.currentUser };
-    } else {
-      user = await signInAnonymously(auth);
-    }
-
+    const user = await getOrSignIn();
     const roomCode = createRoomCode();
-
     await set(ref(db, `rooms/${roomCode}`), {
-      hostId: user.user.uid,
+      hostId: user.uid,
       status: "lobby",
       questionIndex: 0,
-      players: {
-        [user.user.uid]: { name: name.trim(), score: 0 },
-      },
+      players: { [user.uid]: { name: name.trim(), score: 0 } },
     });
-
     localStorage.setItem("name", name.trim());
     router.push(`/room/${roomCode}`);
   }
 
+  async function joinRoom() {
+    if (!name.trim() || !joinCode.trim()) return;
+    setLoading(true);
+    setJoinError("");
+    const code = joinCode.trim().toUpperCase();
+    const snapshot = await get(ref(db, `rooms/${code}`));
+    if (!snapshot.exists()) {
+      setJoinError("Room not found. Check the code and try again.");
+      setLoading(false);
+      return;
+    }
+    const user = await getOrSignIn();
+    localStorage.setItem("name", name.trim());
+    router.push(`/room/${code}`);
+  }
+
+  const canSubmit = tab === "create"
+    ? name.trim() && !loading
+    : name.trim() && joinCode.trim() && !loading;
+
   return (
     <>
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-          --bg: #080c14;
-          --surface: #0e1521;
+          --bg: #05080f;
+          --surface: #0b1120;
+          --surface2: #101828;
           --border: rgba(255,255,255,0.07);
+          --border-accent: rgba(240,192,64,0.3);
           --accent: #f0c040;
           --accent2: #4af0a0;
+          --danger: #f06060;
           --text: #e8edf5;
-          --muted: #5a6a80;
+          --muted: #4a5a72;
         }
 
         body {
@@ -67,259 +88,230 @@ export default function Home() {
         }
 
         @keyframes grain {
-          0%, 100% { transform: translate(0, 0); }
-          10% { transform: translate(-2%, -3%); }
-          20% { transform: translate(3%, 2%); }
-          30% { transform: translate(-1%, 4%); }
-          40% { transform: translate(4%, -1%); }
-          50% { transform: translate(-3%, 3%); }
-          60% { transform: translate(2%, -4%); }
-          70% { transform: translate(-4%, 1%); }
-          80% { transform: translate(3%, -2%); }
-          90% { transform: translate(-2%, 4%); }
+          0%,100%{transform:translate(0,0)}10%{transform:translate(-2%,-3%)}
+          20%{transform:translate(3%,2%)}30%{transform:translate(-1%,4%)}
+          40%{transform:translate(4%,-1%)}50%{transform:translate(-3%,3%)}
+          60%{transform:translate(2%,-4%)}70%{transform:translate(-4%,1%)}
+          80%{transform:translate(3%,-2%)}90%{transform:translate(-2%,4%)}
         }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
-        }
-
+        @keyframes float { 0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)} }
         @keyframes pulse-ring {
-          0% { transform: scale(1); opacity: 0.6; }
-          100% { transform: scale(1.6); opacity: 0; }
+          0%{transform:scale(1);opacity:0.7} 100%{transform:scale(1.8);opacity:0}
         }
-
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to { opacity: 1; transform: translateY(0); }
+          from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)}
         }
-
         @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
+          0%{background-position:-200% center} 100%{background-position:200% center}
+        }
+        @keyframes spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes tab-slide {
+          from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)}
+        }
+        @keyframes error-in {
+          from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)}
         }
 
         .noise::after {
-          content: '';
-          position: fixed;
-          inset: -50%;
-          width: 200%;
-          height: 200%;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-          opacity: 0.025;
-          pointer-events: none;
-          z-index: 999;
-          animation: grain 8s steps(10) infinite;
+          content:'';position:fixed;inset:-50%;width:200%;height:200%;
+          background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+          opacity:0.03;pointer-events:none;z-index:999;animation:grain 8s steps(10) infinite;
         }
 
+        /* Background rings */
+        .bg-ring {
+          position:fixed;border-radius:50%;pointer-events:none;border:1px solid;
+        }
+        .bg-ring-1 {
+          width:600px;height:600px;top:50%;left:50%;
+          transform:translate(-50%,-50%);
+          border-color:rgba(240,192,64,0.04);
+          animation:spin-slow 40s linear infinite;
+        }
+        .bg-ring-2 {
+          width:900px;height:900px;top:50%;left:50%;
+          transform:translate(-50%,-50%);
+          border-color:rgba(74,240,160,0.03);
+          animation:spin-slow 60s linear infinite reverse;
+        }
         .hero-glow {
-          position: absolute;
-          top: -200px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 700px;
-          height: 700px;
-          background: radial-gradient(ellipse, rgba(240,192,64,0.08) 0%, transparent 70%);
-          pointer-events: none;
+          position:fixed;top:-300px;left:50%;transform:translateX(-50%);
+          width:800px;height:800px;
+          background:radial-gradient(ellipse,rgba(240,192,64,0.07) 0%,transparent 65%);
+          pointer-events:none;
+        }
+        .hero-glow-2 {
+          position:fixed;bottom:-200px;right:-100px;
+          width:600px;height:600px;
+          background:radial-gradient(ellipse,rgba(74,240,160,0.05) 0%,transparent 65%);
+          pointer-events:none;
         }
 
+        /* Card */
         .card {
-          animation: fadeUp 0.6s ease both;
+          width:100%;max-width:480px;
+          background:var(--surface);
+          border:1px solid var(--border);
+          border-radius:28px;
+          padding:40px;
+          position:relative;
+          animation:fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
+          box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.04) inset;
         }
 
+        /* Badge */
         .badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(240,192,64,0.1);
-          border: 1px solid rgba(240,192,64,0.25);
-          color: var(--accent);
-          font-size: 11px;
-          font-weight: 500;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          padding: 6px 14px;
-          border-radius: 100px;
-          margin-bottom: 24px;
-          animation: fadeUp 0.4s ease both;
+          display:inline-flex;align-items:center;gap:7px;
+          background:rgba(240,192,64,0.08);border:1px solid rgba(240,192,64,0.2);
+          color:var(--accent);font-size:10px;font-weight:600;
+          letter-spacing:0.15em;text-transform:uppercase;
+          padding:6px 14px;border-radius:100px;margin-bottom:28px;
+          animation:fadeUp 0.4s ease both;
         }
-
         .badge-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: var(--accent);
-          position: relative;
+          width:6px;height:6px;border-radius:50%;background:var(--accent);position:relative;
         }
-
         .badge-dot::after {
-          content: '';
-          position: absolute;
-          inset: -3px;
-          border-radius: 50%;
-          background: var(--accent);
-          animation: pulse-ring 1.5s ease-out infinite;
+          content:'';position:absolute;inset:-3px;border-radius:50%;
+          background:var(--accent);animation:pulse-ring 1.5s ease-out infinite;
         }
 
+        /* Title */
         h1.title {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(48px, 8vw, 88px);
-          font-weight: 800;
-          line-height: 0.95;
-          letter-spacing: -0.03em;
-          margin-bottom: 20px;
-          animation: fadeUp 0.5s ease both;
-          animation-delay: 0.05s;
+          font-family:'Syne',sans-serif;
+          font-size:clamp(52px,9vw,96px);
+          font-weight:900;line-height:0.92;
+          letter-spacing:-0.04em;margin-bottom:20px;
+          animation:fadeUp 0.5s ease both;animation-delay:0.05s;
         }
-
-        .title-line2 {
-          background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
-          background-size: 200% auto;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: shimmer 3s linear infinite, fadeUp 0.5s ease both;
-          animation-delay: 0s, 0.1s;
+        .title-accent {
+          background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent));
+          background-size:200% auto;
+          -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+          animation:shimmer 3s linear infinite,fadeUp 0.5s ease both;
+          animation-delay:0s,0.08s;
         }
 
         .subtitle {
-          font-size: 16px;
-          color: var(--muted);
-          line-height: 1.7;
-          max-width: 340px;
-          margin-bottom: 40px;
-          font-weight: 300;
-          animation: fadeUp 0.5s ease both;
-          animation-delay: 0.15s;
+          font-size:14px;color:var(--muted);line-height:1.75;
+          max-width:320px;margin-bottom:36px;font-weight:300;
+          animation:fadeUp 0.5s ease both;animation-delay:0.12s;
         }
 
-        .input-wrap {
-          position: relative;
-          animation: fadeUp 0.5s ease both;
-          animation-delay: 0.2s;
+        /* Tabs */
+        .tabs {
+          display:grid;grid-template-columns:1fr 1fr;
+          background:var(--surface2);border-radius:14px;padding:4px;
+          gap:4px;margin-bottom:28px;
+          animation:fadeUp 0.5s ease both;animation-delay:0.16s;
+          border:1px solid var(--border);
+        }
+        .tab {
+          padding:10px;border-radius:11px;border:none;
+          font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+          cursor:pointer;transition:all 0.2s;color:var(--muted);background:transparent;
+        }
+        .tab.active {
+          background:var(--surface);color:var(--text);
+          box-shadow:0 2px 12px rgba(0,0,0,0.3);
+          border:1px solid var(--border);
+        }
+        .tab:hover:not(.active) { color:var(--text); }
+
+        /* Form */
+        .form { animation:tab-slide 0.25s ease both; }
+
+        .input-group { margin-bottom:12px; }
+        .input-label {
+          display:block;font-size:11px;font-weight:500;
+          text-transform:uppercase;letter-spacing:0.1em;
+          color:var(--muted);margin-bottom:7px;
         }
 
-        .input-wrap input {
-          width: 100%;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          color: var(--text);
-          font-family: 'DM Sans', sans-serif;
-          font-size: 15px;
-          padding: 16px 20px;
-          border-radius: 14px;
-          outline: none;
-          transition: border-color 0.2s, box-shadow 0.2s;
+        .field {
+          width:100%;background:var(--surface2);
+          border:1px solid var(--border);color:var(--text);
+          font-family:'DM Sans',sans-serif;font-size:15px;
+          padding:14px 18px;border-radius:14px;outline:none;
+          transition:border-color 0.2s,box-shadow 0.2s;
+        }
+        .field:focus {
+          border-color:var(--border-accent);
+          box-shadow:0 0 0 3px rgba(240,192,64,0.07);
+        }
+        .field::placeholder { color:var(--muted); }
+
+        .code-field {
+          text-transform:uppercase;letter-spacing:0.2em;
+          font-family:'Syne',sans-serif;font-size:18px;font-weight:700;
+          text-align:center;
         }
 
-        .input-wrap input:focus {
-          border-color: rgba(240,192,64,0.4);
-          box-shadow: 0 0 0 3px rgba(240,192,64,0.08);
+        .error-msg {
+          background:rgba(240,96,96,0.1);border:1px solid rgba(240,96,96,0.25);
+          color:var(--danger);font-size:13px;padding:10px 14px;border-radius:10px;
+          margin-bottom:12px;animation:error-in 0.2s ease;
         }
-
-        .input-wrap input::placeholder { color: var(--muted); }
 
         .cta-btn {
-          width: 100%;
-          margin-top: 12px;
-          padding: 16px 24px;
-          border-radius: 14px;
-          border: none;
-          background: var(--accent);
-          color: #080c14;
-          font-family: 'Syne', sans-serif;
-          font-size: 16px;
-          font-weight: 700;
-          letter-spacing: 0.02em;
-          cursor: pointer;
-          transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
-          box-shadow: 0 4px 32px rgba(240,192,64,0.25);
-          animation: fadeUp 0.5s ease both;
-          animation-delay: 0.25s;
+          width:100%;margin-top:4px;padding:16px 24px;
+          border-radius:14px;border:none;
+          background:var(--accent);color:#05080f;
+          font-family:'Syne',sans-serif;font-size:15px;font-weight:800;
+          letter-spacing:0.02em;cursor:pointer;
+          transition:transform 0.15s,box-shadow 0.15s,opacity 0.15s;
+          box-shadow:0 4px 32px rgba(240,192,64,0.3);
         }
-
         .cta-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 40px rgba(240,192,64,0.35);
+          transform:translateY(-2px);box-shadow:0 8px 48px rgba(240,192,64,0.4);
         }
+        .cta-btn:active:not(:disabled) { transform:translateY(0); }
+        .cta-btn:disabled { opacity:0.4;cursor:not-allowed; }
+        .cta-btn.join-btn {
+          background:var(--accent2);box-shadow:0 4px 32px rgba(74,240,160,0.25);
+        }
+        .cta-btn.join-btn:hover:not(:disabled) { box-shadow:0 8px 48px rgba(74,240,160,0.38); }
 
-        .cta-btn:active:not(:disabled) { transform: translateY(0); }
-        .cta-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
+        /* Features */
         .features {
-          display: flex;
-          gap: 20px;
-          margin-top: 48px;
-          animation: fadeUp 0.5s ease both;
-          animation-delay: 0.3s;
+          display:flex;gap:10px;margin-top:36px;
+          animation:fadeUp 0.5s ease both;animation-delay:0.28s;
         }
-
         .feature {
-          flex: 1;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 16px;
-          padding: 20px;
+          flex:1;background:var(--surface2);border:1px solid var(--border);
+          border-radius:16px;padding:16px 14px;text-align:center;
         }
+        .feature-icon { font-size:20px;margin-bottom:7px;display:block; }
+        .feature-title { font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:3px; }
+        .feature-desc { font-size:11px;color:var(--muted);line-height:1.4; }
 
-        .feature-icon {
-          font-size: 24px;
-          margin-bottom: 10px;
-        }
-
-        .feature-title {
-          font-family: 'Syne', sans-serif;
-          font-size: 14px;
-          font-weight: 700;
-          margin-bottom: 4px;
-        }
-
-        .feature-desc {
-          font-size: 12px;
-          color: var(--muted);
-          line-height: 1.5;
-        }
-
-        .orb {
-          position: absolute;
-          border-radius: 50%;
-          pointer-events: none;
-        }
-
+        /* Orbs */
+        .orb { position:absolute;border-radius:50%;pointer-events:none; }
         .orb-1 {
-          width: 300px; height: 300px;
-          background: radial-gradient(circle, rgba(74,240,160,0.06), transparent 70%);
-          bottom: -80px; right: -80px;
-          animation: float 7s ease-in-out infinite;
+          width:280px;height:280px;
+          background:radial-gradient(circle,rgba(74,240,160,0.07),transparent 70%);
+          bottom:-60px;right:-70px;animation:float 7s ease-in-out infinite;
         }
-
         .orb-2 {
-          width: 200px; height: 200px;
-          background: radial-gradient(circle, rgba(240,192,64,0.07), transparent 70%);
-          top: 60px; left: -60px;
-          animation: float 9s ease-in-out infinite reverse;
+          width:180px;height:180px;
+          background:radial-gradient(circle,rgba(240,192,64,0.08),transparent 70%);
+          top:40px;left:-50px;animation:float 9s ease-in-out infinite reverse;
         }
       `}</style>
 
       <div className="noise" />
+      <div className="bg-ring bg-ring-1" />
+      <div className="bg-ring bg-ring-2" />
+      <div className="hero-glow" />
+      <div className="hero-glow-2" />
 
       <main style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '40px 20px',
-        position: 'relative',
+        minHeight:'100vh',display:'flex',alignItems:'center',
+        justifyContent:'center',padding:'40px 20px',position:'relative',
       }}>
-        <div className="hero-glow" />
-
-        <div className="card" style={{
-          width: '100%',
-          maxWidth: 460,
-          position: 'relative',
-        }}>
-          <div className="orb-1 orb" />
-          <div className="orb-2 orb" />
+        <div className="card">
+          <div className="orb orb-1" />
+          <div className="orb orb-2" />
 
           <div className="badge">
             <span className="badge-dot" />
@@ -328,47 +320,88 @@ export default function Home() {
 
           <h1 className="title">
             Logo<br />
-            <span className="title-line2">& Flag</span><br />
+            <span className="title-accent">& Flag</span><br />
             Rush
           </h1>
 
           <p className="subtitle">
-            Guess logos and flags faster than anyone else. Score more points for quick answers.
+            Guess logos and flags faster than anyone. Speed wins points.
           </p>
 
-          <div className="input-wrap">
-            <input
-              placeholder="Enter your name…"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !loading && name.trim() && createRoom()}
-              maxLength={20}
-            />
+          {/* Tabs */}
+          <div className="tabs">
+            <button className={`tab ${tab === 'create' ? 'active' : ''}`} onClick={() => { setTab('create'); setJoinError(''); }}>
+              ✦ Create Game
+            </button>
+            <button className={`tab ${tab === 'join' ? 'active' : ''}`} onClick={() => { setTab('join'); setJoinError(''); }}>
+              → Join Room
+            </button>
           </div>
 
-          <button
-            className="cta-btn"
-            onClick={createRoom}
-            disabled={!name.trim() || loading}
-          >
-            {loading ? 'Creating room…' : 'Create Game →'}
-          </button>
+          {tab === 'create' && (
+            <div className="form" key="create">
+              <div className="input-group">
+                <label className="input-label">Your name</label>
+                <input
+                  className="field"
+                  placeholder="Enter your name…"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !loading && name.trim() && createRoom()}
+                  maxLength={20}
+                />
+              </div>
+              <button className="cta-btn" onClick={createRoom} disabled={!name.trim() || loading}>
+                {loading ? 'Creating room…' : 'Create Game →'}
+              </button>
+            </div>
+          )}
+
+          {tab === 'join' && (
+            <div className="form" key="join">
+              <div className="input-group">
+                <label className="input-label">Your name</label>
+                <input
+                  className="field"
+                  placeholder="Enter your name…"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={20}
+                />
+              </div>
+              <div className="input-group">
+                <label className="input-label">Room code</label>
+                <input
+                  className="field code-field"
+                  placeholder="XXXXX"
+                  value={joinCode}
+                  onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setJoinError(''); }}
+                  onKeyDown={(e) => e.key === 'Enter' && !loading && canSubmit && joinRoom()}
+                  maxLength={5}
+                />
+              </div>
+              {joinError && <div className="error-msg">⚠ {joinError}</div>}
+              <button className="cta-btn join-btn" onClick={joinRoom} disabled={!canSubmit}>
+                {loading ? 'Joining…' : 'Join Room →'}
+              </button>
+            </div>
+          )}
 
           <div className="features">
             <div className="feature">
-              <div className="feature-icon">🌍</div>
+              <span className="feature-icon">🌍</span>
               <div className="feature-title">Flags</div>
-              <div className="feature-desc">150+ countries to identify</div>
+              <div className="feature-desc">150+ countries</div>
             </div>
             <div className="feature">
-              <div className="feature-icon">🏷️</div>
+              <span className="feature-icon">🏷️</span>
               <div className="feature-title">Logos</div>
-              <div className="feature-desc">100+ brands & icons</div>
+              <div className="feature-desc">100+ brands</div>
             </div>
             <div className="feature">
-              <div className="feature-icon">⚡</div>
+              <span className="feature-icon">⚡</span>
               <div className="feature-title">Speed</div>
-              <div className="feature-desc">Fast answers = more points</div>
+              <div className="feature-desc">Fast = more pts</div>
             </div>
           </div>
         </div>
