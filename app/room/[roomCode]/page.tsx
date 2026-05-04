@@ -91,11 +91,6 @@ export default function RoomPage() {
   }, []);
 
   function playSound(name: SoundName) {
-  if (!soundEnabled) {
-    console.log("Sound is disabled");
-    return;
-  }
-
   const files: Record<SoundName, string> = {
     correct: "/sounds/correct.mp3",
     wrong: "/sounds/wrong.mp3",
@@ -104,7 +99,7 @@ export default function RoomPage() {
   };
 
   const audio = new Audio(files[name]);
-  audio.volume = 0.6;
+  audio.volume = 0.8;
 
   audio.play().catch((error) => {
     console.log("Sound failed:", name, error);
@@ -112,12 +107,10 @@ export default function RoomPage() {
 }
 
   function enableSound() {
-    const audio = soundsRef.current.correct;
-
-    if (!audio) {
-      console.log("Correct sound not loaded");
-      return;
-    }
+  console.log("ENABLE SOUND CLICKED");
+  setSoundEnabled(true);
+  playSound("correct");
+}
 
     audio.currentTime = 0;
     audio.volume = 0.3;
@@ -154,7 +147,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (room?.phase === "reveal" && lastPhase !== "reveal") {
-      if (soundEnabled) playSound("timer");
+      playSound("timer");
       setLastPhase("reveal");
     }
     if (room?.phase === "question") setLastPhase("question");
@@ -162,7 +155,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (room?.status === "ended" && !gameEnded) {
-      if (soundEnabled) playSound("gameover");
+      playSound("gameover");
       setGameEnded(true);
       if (!confettiRef.current) {
         confettiRef.current = true;
@@ -288,7 +281,7 @@ export default function RoomPage() {
     }
     const correct = isCorrectAnswer(answer, room.currentQuestion);
     if (!correct) {
-      if (soundEnabled) playSound("wrong");
+      playSound("wrong");
       setAnswer("");
       setFeedback({ text: "Wrong — try again!", ok: false });
       return;
@@ -302,7 +295,7 @@ export default function RoomPage() {
       [`players/${uid}/score`]: currentScore + earnedPoints,
       [`roundAnswers/${questionKey}/${uid}`]: { correct: true },
     });
-    if (soundEnabled) playSound("correct");
+    playSound("correct");
     setFeedback({ text: `+${earnedPoints} pts! ⚡`, ok: true });
     setAnswer("");
   }
@@ -607,11 +600,15 @@ export default function RoomPage() {
                   {copied ? "✓ Copied!" : "🔗 Invite"}
                 </button>
                 <button
-                  className={`btn btn-ghost ${soundEnabled ? "btn-sound-on" : ""}`}
-                  onClick={enableSound}
-                >
-                  {soundEnabled ? "🔊 Sound on" : "🔇 Sound off"}
-                </button>
+  className={`btn btn-ghost ${soundEnabled ? "btn-sound-on" : ""}`}
+  onClick={() => {
+    console.log("SOUND BUTTON PRESSED");
+    setSoundEnabled(true);
+    playSound("correct");
+  }}
+>
+  {soundEnabled ? "🔊 Sound on" : "🔇 Sound off"}
+</button>
               </div>
             </div>
 
