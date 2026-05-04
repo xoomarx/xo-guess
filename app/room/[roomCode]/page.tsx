@@ -69,6 +69,10 @@ export default function RoomPage() {
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
+const correctAudioRef = useRef<HTMLAudioElement | null>(null);
+const wrongAudioRef = useRef<HTMLAudioElement | null>(null);
+const timerAudioRef = useRef<HTMLAudioElement | null>(null);
+const gameoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const [lastPhase, setLastPhase] = useState<string | null>(null);
   const [gameEnded, setGameEnded] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -79,40 +83,37 @@ export default function RoomPage() {
 
  
  function playSound(name: "correct" | "wrong" | "timer" | "gameover") {
-  const files = {
-    correct: "/sounds/correct.mp3",
-    wrong: "/sounds/wrong.mp3",
-    timer: "/sounds/timer.mp3",
-    gameover: "/sounds/gameover.mp3",
+  const audioMap = {
+    correct: correctAudioRef.current,
+    wrong: wrongAudioRef.current,
+    timer: timerAudioRef.current,
+    gameover: gameoverAudioRef.current,
   };
 
-  const audio = new Audio(files[name]);
+  const audio = audioMap[name];
+
+  if (!audio) {
+    console.log("Audio element missing:", name);
+    return;
+  }
+
+  audio.currentTime = 0;
   audio.volume = 1;
 
   audio
     .play()
     .then(() => {
-      console.log("Played sound:", name);
+      console.log("Played:", name);
     })
     .catch((error) => {
-      console.log("Sound failed:", name, error);
+      console.log("Audio play failed:", name, error);
     });
 }
 
   function enableSound() {
   setSoundEnabled(true);
-
-  const audio = new Audio("/sounds/correct.mp3");
-  audio.volume = 1;
-
-  audio
-    .play()
-    .then(() => {
-      console.log("Enable sound worked");
-    })
-    .catch((error) => {
-      console.log("Enable sound failed:", error);
-    });
+  console.log("Sound enabled button clicked");
+  playSound("correct");
 }
 
   useEffect(() => {
@@ -339,6 +340,10 @@ export default function RoomPage() {
 
   return (
     <>
+<audio ref={correctAudioRef} src="/sounds/correct.mp3" preload="auto" />
+<audio ref={wrongAudioRef} src="/sounds/wrong.mp3" preload="auto" />
+<audio ref={timerAudioRef} src="/sounds/timer.mp3" preload="auto" />
+<audio ref={gameoverAudioRef} src="/sounds/gameover.mp3" preload="auto" />
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
