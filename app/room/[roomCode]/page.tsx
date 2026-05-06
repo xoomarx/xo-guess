@@ -80,7 +80,9 @@ export default function RoomPage() {
 
   
   const isHost = Boolean(uid && room?.hostId === uid);
-  function playSound(name: SoundName) {
+  function playSound(name: SoundName, maxDurationMs?: number) {
+    if (!soundUnlockedRef.current) return;
+
     const files: Record<SoundName, string> = {
       correct: "/sounds/correct.wav",
       wrong: "/sounds/wrong.wav",
@@ -89,11 +91,24 @@ export default function RoomPage() {
     };
 
     const audio = new Audio(files[name]);
-    audio.volume = 1;
+    audio.volume = name === "timer" ? 0.45 : 0.75;
+
+    let stopTimer: ReturnType<typeof setTimeout> | undefined;
 
     audio.play().catch((error) => {
       console.log("Sound failed:", name, error);
     });
+
+    if (maxDurationMs) {
+      stopTimer = setTimeout(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      }, maxDurationMs);
+    }
+
+    audio.onended = () => {
+      if (stopTimer) clearTimeout(stopTimer);
+    };
   }
 
   function enableSound() {
@@ -122,7 +137,8 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (room?.phase === "reveal" && lastPhase !== "reveal") {
-      if (soundEnabled) if (soundUnlockedRef.current) if (soundUnlockedRef.current) playSound("timer");
+      if (soundEnabled) if (soundUnlockedRef.current) // Play only a short tick, even if timer.wav is a long file.
+        if (soundUnlockedRef.current) playSound("timer", 350);
       setLastPhase("reveal");
     }
     if (room?.phase === "question") setLastPhase("question");
