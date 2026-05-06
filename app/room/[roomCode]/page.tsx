@@ -146,34 +146,47 @@ export default function RoomPage() {
     if (room?.status !== "playing") return;
     if (room?.phase !== "question") return;
 
+    setAnswer("");
+    setFeedback(null);
+    lastTimerSoundSecondRef.current = null;
+
     const focusTimer = setTimeout(() => {
       answerInputRef.current?.focus();
-    }, 80);
+      answerInputRef.current?.select();
+    }, 100);
 
     return () => clearTimeout(focusTimer);
   }, [room?.status, room?.phase, room?.questionIndex]);
 
   useEffect(() => {
     if (room?.phase === "reveal" && lastPhase !== "reveal") {
-      if (soundEnabled) if (soundUnlockedRef.current) // Play only a short tick, even if timer.wav is a long file.
-        if (soundUnlockedRef.current) playSound("timer", 350);
       setLastPhase("reveal");
     }
-    if (room?.phase === "question") setLastPhase("question");
-  }, [room?.phase, soundEnabled]);
+
+    if (room?.phase === "question") {
+      setLastPhase("question");
+      lastTimerSoundSecondRef.current = null;
+    }
+  }, [room?.phase, lastPhase]);
 
   useEffect(() => {
     if (room?.status === "ended" && !gameEnded) {
-      if (soundEnabled) if (soundUnlockedRef.current) if (soundUnlockedRef.current) playSound("gameover");
+      if (soundUnlockedRef.current) playSound("gameover");
       setGameEnded(true);
+
       if (!confettiRef.current) {
         confettiRef.current = true;
         spawnConfetti(document.body);
-        setTimeout(() => { confettiRef.current = false; }, 4000);
+        setTimeout(() => {
+          confettiRef.current = false;
+        }, 4000);
       }
     }
-    if (room?.status !== "ended") setGameEnded(false);
-  }, [room?.status, soundEnabled]);
+
+    if (room?.status !== "ended") {
+      setGameEnded(false);
+    }
+  }, [room?.status, gameEnded]);
 
   useEffect(() => {
     if (!room?.players) return;
@@ -231,6 +244,19 @@ export default function RoomPage() {
     }, 300);
     return () => clearInterval(interval);
   }, [room?.status, room?.roundStartedAt, room?.revealStartedAt, room?.phase, room?.questionIndex, serverOffset, isHost]);
+
+  useEffect(() => {
+    if (room?.status !== "playing") return;
+    if (room?.phase !== "question") return;
+    if (timeLeft <= 0 || timeLeft > 5) return;
+    if (lastTimerSoundSecondRef.current === timeLeft) return;
+
+    lastTimerSoundSecondRef.current = timeLeft;
+
+    if (soundUnlockedRef.current) {
+      playSound("timer", 350);
+    }
+  }, [room?.status, room?.phase, timeLeft]);
 
   async function joinRoom() {
     if (!uid) return;
