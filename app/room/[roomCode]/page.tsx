@@ -5,7 +5,8 @@ import { useParams } from "next/navigation";
 import { onValue, ref, update, serverTimestamp } from "firebase/database";
 import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "../../../lib/firebase";
-import { getRandomQuestion, isCorrectAnswer } from "../../../lib/questions";
+import { getRandomQuestionByMode, isCorrectAnswer } from "../../../lib/questions";
+import type { GameMode } from "../../../lib/questions";
 
 const TIMER_SECONDS = 15;
 const TOTAL_ROUNDS = 10;
@@ -31,6 +32,7 @@ type Room = {
   revealStartedAt?: number;
   roundAnswers?: Record<string, Record<string, { correct: boolean }>>;
   players?: Record<string, Player>;
+  gameMode?: GameMode;
 };
 type SoundName = "correct" | "wrong" | "timer" | "gameover";
 
@@ -69,10 +71,6 @@ export default function RoomPage() {
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
-const correctAudioRef = useRef<HTMLAudioElement | null>(null);
-const wrongAudioRef = useRef<HTMLAudioElement | null>(null);
-const timerAudioRef = useRef<HTMLAudioElement | null>(null);
-const gameoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const [lastPhase, setLastPhase] = useState<string | null>(null);
   const [gameEnded, setGameEnded] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -81,40 +79,26 @@ const gameoverAudioRef = useRef<HTMLAudioElement | null>(null);
   
   const isHost = Boolean(uid && room?.hostId === uid);
 
- 
- function playSound(name: "correct" | "wrong" | "timer" | "gameover") {
-  const audioMap = {
-    correct: correctAudioRef.current,
-    wrong: wrongAudioRef.current,
-    timer: timerAudioRef.current,
-    gameover: gameoverAudioRef.current,
-  };
+  function playSound(name: SoundName) {
+    const files: Record<SoundName, string> = {
+      correct: "/sounds/correct.mp3",
+      wrong: "/sounds/wrong.mp3",
+      timer: "/sounds/timer.mp3",
+      gameover: "/sounds/gameover.mp3",
+    };
 
-  const audio = audioMap[name];
+    const audio = new Audio(files[name]);
+    audio.volume = 0.8;
 
-  if (!audio) {
-    console.log("Audio element missing:", name);
-    return;
+    audio.play().catch((error) => {
+      console.log("Sound failed:", name, error);
+    });
   }
 
-  audio.currentTime = 0;
-  audio.volume = 1;
-
-  audio
-    .play()
-    .then(() => {
-      console.log("Played:", name);
-    })
-    .catch((error) => {
-      console.log("Audio play failed:", name, error);
-    });
-}
-
   function enableSound() {
-  setSoundEnabled(true);
-  console.log("Sound enabled button clicked");
-  playSound("correct");
-}
+    setSoundEnabled(true);
+    playSound("correct");
+  }
 
   useEffect(() => {
     const savedName = localStorage.getItem("name");
@@ -136,7 +120,7 @@ const gameoverAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (room?.phase === "reveal" && lastPhase !== "reveal") {
-      playSound("timer");
+      if (soundEnabled) playSound("timer");
       setLastPhase("reveal");
     }
     if (room?.phase === "question") setLastPhase("question");
@@ -144,7 +128,7 @@ const gameoverAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (room?.status === "ended" && !gameEnded) {
-      playSound("gameover");
+      if (soundEnabled) playSound("gameover");
       setGameEnded(true);
       if (!confettiRef.current) {
         confettiRef.current = true;
@@ -224,7 +208,8 @@ const gameoverAudioRef = useRef<HTMLAudioElement | null>(null);
   }
 
   async function startGame() {
-    const random = getRandomQuestion([]);
+    const mode = room?.gameMode || "mix";
+    const random = getRandomQuestionByMode([], mode);
     await update(ref(db, `rooms/${roomCode}`), {
       status: "playing",
       questionIndex: random.index,
@@ -247,7 +232,8 @@ const gameoverAudioRef = useRef<HTMLAudioElement | null>(null);
       return;
     }
     const used = room?.usedQuestionIndexes || [];
-    const random = getRandomQuestion(used);
+    const mode = room?.gameMode || "mix";
+    const random = getRandomQuestionByMode(used, mode);
     await update(ref(db, `rooms/${roomCode}`), {
       status: "playing",
       questionIndex: random.index,
@@ -340,10 +326,6 @@ const gameoverAudioRef = useRef<HTMLAudioElement | null>(null);
 
   return (
     <>
-<audio ref={correctAudioRef} src="/sounds/correct.mp3" preload="auto" />
-<audio ref={wrongAudioRef} src="/sounds/wrong.mp3" preload="auto" />
-<audio ref={timerAudioRef} src="/sounds/timer.mp3" preload="auto" />
-<audio ref={gameoverAudioRef} src="/sounds/gameover.mp3" preload="auto" />
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -397,6 +379,13 @@ const gameoverAudioRef = useRef<HTMLAudioElement | null>(null);
           letter-spacing:0.15em;color:var(--muted);
           background:var(--surface2);border:1px solid var(--border);
           padding:3px 10px;border-radius:100px;margin-top:3px;display:inline-block;
+        }
+        .room-mode-badge{
+          display:inline-block;margin-top:6px;margin-left:6px;
+          font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+          color:var(--accent);background:rgba(240,192,64,0.08);
+          border:1px solid rgba(240,192,64,0.18);
+          padding:4px 9px;border-radius:999px;
         }
         .btn-row{display:flex;gap:8px;flex-wrap:wrap}
 
@@ -587,6 +576,13 @@ const gameoverAudioRef = useRef<HTMLAudioElement | null>(null);
               <div>
                 <div className="room-title">Logo & Flag Rush</div>
                 <div className="room-code-badge">{roomCode}</div>
+                <div className="room-mode-badge">
+                  {room.gameMode === "flags"
+                    ? "🌍 Flags only"
+                    : room.gameMode === "logos"
+                    ? "🏷️ Logos only"
+                    : "🎲 Mixed game"}
+                </div>
               </div>
               <div className="btn-row">
                 <button className="btn btn-ghost" onClick={copyInvite}>

@@ -5,18 +5,26 @@ import { useRouter } from "next/navigation";
 import { ref, set, get } from "firebase/database";
 import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
+import type { GameMode } from "../lib/questions";
 
 function createRoomCode() {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
 }
 
+const MODES: { value: GameMode; emoji: string; label: string; desc: string }[] = [
+  { value: "flags", emoji: "🌍", label: "Flags Only", desc: "150+ countries" },
+  { value: "logos", emoji: "🏷️", label: "Logos Only", desc: "100+ brands" },
+  { value: "mix",   emoji: "🎲", label: "Mix Both",  desc: "Flags + logos" },
+];
+
 export default function Home() {
   const router = useRouter();
-  const [tab, setTab] = useState<"create" | "join">("create");
-  const [name, setName] = useState("");
+  const [tab, setTab]         = useState<"create" | "join">("create");
+  const [name, setName]       = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [joinError, setJoinError] = useState("");
+  const [gameMode, setGameMode] = useState<GameMode>("mix");
 
   async function getOrSignIn() {
     if (auth.currentUser) return auth.currentUser;
@@ -32,6 +40,7 @@ export default function Home() {
     await set(ref(db, `rooms/${roomCode}`), {
       hostId: user.uid,
       status: "lobby",
+      gameMode,
       questionIndex: 0,
       players: { [user.uid]: { name: name.trim(), score: 0 } },
     });
@@ -55,9 +64,10 @@ export default function Home() {
     router.push(`/room/${code}`);
   }
 
-  const canSubmit = tab === "create"
-    ? name.trim() && !loading
-    : name.trim() && joinCode.trim() && !loading;
+  const canSubmit =
+    tab === "create"
+      ? name.trim() && !loading
+      : name.trim() && joinCode.trim() && !loading;
 
   return (
     <>
@@ -111,6 +121,9 @@ export default function Home() {
         @keyframes error-in {
           from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)}
         }
+        @keyframes mode-select {
+          0%{transform:scale(1)} 40%{transform:scale(0.94)} 100%{transform:scale(1)}
+        }
 
         .noise::after {
           content:'';position:fixed;inset:-50%;width:200%;height:200%;
@@ -118,7 +131,6 @@ export default function Home() {
           opacity:0.03;pointer-events:none;z-index:999;animation:grain 8s steps(10) infinite;
         }
 
-        /* Background rings */
         .bg-ring {
           position:fixed;border-radius:50%;pointer-events:none;border:1px solid;
         }
@@ -147,7 +159,6 @@ export default function Home() {
           pointer-events:none;
         }
 
-        /* Card */
         .card {
           width:100%;max-width:480px;
           background:var(--surface);
@@ -159,7 +170,6 @@ export default function Home() {
           box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.04) inset;
         }
 
-        /* Badge */
         .badge {
           display:inline-flex;align-items:center;gap:7px;
           background:rgba(240,192,64,0.08);border:1px solid rgba(240,192,64,0.2);
@@ -176,7 +186,6 @@ export default function Home() {
           background:var(--accent);animation:pulse-ring 1.5s ease-out infinite;
         }
 
-        /* Title */
         h1.title {
           font-family:'Syne',sans-serif;
           font-size:clamp(52px,9vw,96px);
@@ -194,15 +203,63 @@ export default function Home() {
 
         .subtitle {
           font-size:14px;color:var(--muted);line-height:1.75;
-          max-width:320px;margin-bottom:36px;font-weight:300;
+          max-width:320px;margin-bottom:28px;font-weight:300;
           animation:fadeUp 0.5s ease both;animation-delay:0.12s;
         }
+
+        /* ── Mode Selector ── */
+        .mode-section {
+          margin-bottom:20px;
+          animation:fadeUp 0.5s ease both;animation-delay:0.14s;
+        }
+        .mode-label {
+          font-size:10px;font-weight:700;text-transform:uppercase;
+          letter-spacing:0.14em;color:var(--muted);margin-bottom:10px;display:block;
+        }
+        .mode-grid {
+          display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+        }
+        .mode-btn {
+          display:flex;flex-direction:column;align-items:center;gap:5px;
+          padding:12px 8px;border-radius:14px;border:1px solid var(--border);
+          background:var(--surface2);cursor:pointer;
+          transition:all 0.18s cubic-bezier(0.22,1,0.36,1);
+          color:var(--muted);
+        }
+        .mode-btn:hover {
+          border-color:rgba(255,255,255,0.14);color:var(--text);
+          transform:translateY(-1px);
+        }
+        .mode-btn.selected {
+          border-color:var(--border-accent);
+          background:rgba(240,192,64,0.07);
+          color:var(--text);
+          box-shadow:0 0 0 1px rgba(240,192,64,0.15), 0 8px 24px rgba(240,192,64,0.1);
+          animation:mode-select 0.25s ease;
+        }
+        .mode-btn.selected.flags-mode {
+          border-color:rgba(74,240,160,0.35);
+          background:rgba(74,240,160,0.07);
+          box-shadow:0 0 0 1px rgba(74,240,160,0.15), 0 8px 24px rgba(74,240,160,0.1);
+        }
+        .mode-btn.selected.logos-mode {
+          border-color:rgba(160,120,255,0.35);
+          background:rgba(160,120,255,0.07);
+          box-shadow:0 0 0 1px rgba(160,120,255,0.15), 0 8px 24px rgba(160,120,255,0.1);
+        }
+        .mode-emoji { font-size:22px;line-height:1; }
+        .mode-name {
+          font-family:'Syne',sans-serif;font-size:11px;font-weight:800;
+          letter-spacing:0.02em;
+        }
+        .mode-desc { font-size:10px;color:var(--muted);text-align:center; }
+        .mode-btn.selected .mode-desc { color:inherit;opacity:0.7; }
 
         /* Tabs */
         .tabs {
           display:grid;grid-template-columns:1fr 1fr;
           background:var(--surface2);border-radius:14px;padding:4px;
-          gap:4px;margin-bottom:28px;
+          gap:4px;margin-bottom:24px;
           animation:fadeUp 0.5s ease both;animation-delay:0.16s;
           border:1px solid var(--border);
         }
@@ -218,7 +275,6 @@ export default function Home() {
         }
         .tab:hover:not(.active) { color:var(--text); }
 
-        /* Form */
         .form { animation:tab-slide 0.25s ease both; }
 
         .input-group { margin-bottom:12px; }
@@ -272,20 +328,18 @@ export default function Home() {
         }
         .cta-btn.join-btn:hover:not(:disabled) { box-shadow:0 8px 48px rgba(74,240,160,0.38); }
 
-        /* Features */
         .features {
-          display:flex;gap:10px;margin-top:36px;
+          display:flex;gap:10px;margin-top:32px;
           animation:fadeUp 0.5s ease both;animation-delay:0.28s;
         }
         .feature {
           flex:1;background:var(--surface2);border:1px solid var(--border);
-          border-radius:16px;padding:16px 14px;text-align:center;
+          border-radius:16px;padding:14px 12px;text-align:center;
         }
-        .feature-icon { font-size:20px;margin-bottom:7px;display:block; }
+        .feature-icon { font-size:20px;margin-bottom:6px;display:block; }
         .feature-title { font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:3px; }
         .feature-desc { font-size:11px;color:var(--muted);line-height:1.4; }
 
-        /* Orbs */
         .orb { position:absolute;border-radius:50%;pointer-events:none; }
         .orb-1 {
           width:280px;height:280px;
@@ -328,17 +382,43 @@ export default function Home() {
             Guess logos and flags faster than anyone. Speed wins points.
           </p>
 
+          {/* ── Game Mode Selector (only for Create) ── */}
+          {tab === "create" && (
+            <div className="mode-section">
+              <span className="mode-label">Game Mode</span>
+              <div className="mode-grid">
+                {MODES.map((m) => (
+                  <button
+                    key={m.value}
+                    className={`mode-btn ${gameMode === m.value ? `selected ${m.value}-mode` : ""}`}
+                    onClick={() => setGameMode(m.value)}
+                  >
+                    <span className="mode-emoji">{m.emoji}</span>
+                    <span className="mode-name">{m.label}</span>
+                    <span className="mode-desc">{m.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Tabs */}
           <div className="tabs">
-            <button className={`tab ${tab === 'create' ? 'active' : ''}`} onClick={() => { setTab('create'); setJoinError(''); }}>
+            <button
+              className={`tab ${tab === "create" ? "active" : ""}`}
+              onClick={() => { setTab("create"); setJoinError(""); }}
+            >
               ✦ Create Game
             </button>
-            <button className={`tab ${tab === 'join' ? 'active' : ''}`} onClick={() => { setTab('join'); setJoinError(''); }}>
+            <button
+              className={`tab ${tab === "join" ? "active" : ""}`}
+              onClick={() => { setTab("join"); setJoinError(""); }}
+            >
               → Join Room
             </button>
           </div>
 
-          {tab === 'create' && (
+          {tab === "create" && (
             <div className="form" key="create">
               <div className="input-group">
                 <label className="input-label">Your name</label>
@@ -347,17 +427,17 @@ export default function Home() {
                   placeholder="Enter your name…"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !loading && name.trim() && createRoom()}
+                  onKeyDown={(e) => e.key === "Enter" && !loading && name.trim() && createRoom()}
                   maxLength={20}
                 />
               </div>
               <button className="cta-btn" onClick={createRoom} disabled={!name.trim() || loading}>
-                {loading ? 'Creating room…' : 'Create Game →'}
+                {loading ? "Creating room…" : "Create Game →"}
               </button>
             </div>
           )}
 
-          {tab === 'join' && (
+          {tab === "join" && (
             <div className="form" key="join">
               <div className="input-group">
                 <label className="input-label">Your name</label>
@@ -375,14 +455,14 @@ export default function Home() {
                   className="field code-field"
                   placeholder="XXXXX"
                   value={joinCode}
-                  onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setJoinError(''); }}
-                  onKeyDown={(e) => e.key === 'Enter' && !loading && canSubmit && joinRoom()}
+                  onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setJoinError(""); }}
+                  onKeyDown={(e) => e.key === "Enter" && !loading && canSubmit && joinRoom()}
                   maxLength={5}
                 />
               </div>
               {joinError && <div className="error-msg">⚠ {joinError}</div>}
               <button className="cta-btn join-btn" onClick={joinRoom} disabled={!canSubmit}>
-                {loading ? 'Joining…' : 'Join Room →'}
+                {loading ? "Joining…" : "Join Room →"}
               </button>
             </div>
           )}
