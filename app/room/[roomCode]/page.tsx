@@ -30,7 +30,7 @@ type Room = {
   totalRounds?: number;
   phase?: "question" | "reveal";
   revealStartedAt?: number;
-  roundAnswers?: Record<string, Record<string, { correct: boolean }>>;
+  roundAnswers?: Record<string, Record<string, { correct: boolean; timeTakenMs?: number; answeredAt?: number }>>;
   players?: Record<string, Player>;
   gameMode?: GameMode;
 };
@@ -328,7 +328,8 @@ export default function RoomPage() {
     }
     const currentScore = room.players?.[uid]?.score || 0;
     const serverNow = Date.now() + serverOffset;
-    const elapsed = Math.floor((serverNow - (room.roundStartedAt || serverNow)) / 1000);
+    const elapsedMs = Math.max(0, serverNow - (room.roundStartedAt || serverNow));
+    const elapsed = Math.floor(elapsedMs / 1000);
     const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
     const earnedPoints = Math.max(1, remaining);
     const totalPlayers = Object.keys(room.players || {}).length;
@@ -339,7 +340,11 @@ export default function RoomPage() {
 
     const updates: Record<string, unknown> = {
       [`players/${uid}/score`]: currentScore + earnedPoints,
-      [`roundAnswers/${questionKey}/${uid}`]: { correct: true },
+      [`roundAnswers/${questionKey}/${uid}`]: {
+        correct: true,
+        timeTakenMs: elapsedMs,
+        answeredAt: serverNow,
+      },
     };
 
     if (everyoneAnswered) {
@@ -397,15 +402,26 @@ export default function RoomPage() {
   const players = Object.values(room.players || {});
   const questionKey = String(room.questionIndex);
   const alreadyAnswered = uid ? room.roundAnswers?.[questionKey]?.[uid]?.correct : false;
-  const correctPlayerIds = Object.entries(room.roundAnswers?.[questionKey] || {})
-    .filter(([, r]) => r.correct).map(([id]) => id);
-  const correctPlayers = correctPlayerIds.map((id) => room.players?.[id]?.name).filter(Boolean) as string[];
+  const correctPlayers = Object.entries(room.roundAnswers?.[questionKey] || {})
+    .filter(([, result]) => result.correct)
+    .map(([playerId, result]) => ({
+      id: playerId,
+      name: room.players?.[playerId]?.name || "Player",
+      timeTakenMs: result.timeTakenMs ?? TIMER_SECONDS * 1000,
+    }))
+    .sort((a, b) => a.timeTakenMs - b.timeTakenMs);
+
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
 
   const circumference = 2 * Math.PI * 28;
   const isReveal = room.phase === "reveal";
   const maxTime = isReveal ? REVEAL_SECONDS : TIMER_SECONDS;
   const dashOffset = circumference * (1 - timeLeft / maxTime);
+
+  function formatAnswerSpeed(timeTakenMs: number) {
+    const secondsLeft = Math.max(0, TIMER_SECONDS - timeTakenMs / 1000);
+    return `${secondsLeft.toFixed(2)}s`;
+  }
 
   return (
     <>
@@ -577,6 +593,28 @@ export default function RoomPage() {
           background:rgba(74,240,160,0.1);border:1px solid rgba(74,240,160,0.25);
           color:var(--accent2);padding:5px 12px;border-radius:100px;
           font-size:12px;font-weight:600;
+        }
+        .correct-ranking{
+          display:flex;flex-direction:column;gap:8px;
+          max-width:360px;margin:14px auto 10px;
+        }
+        .correct-ranking-title{
+          font-size:10px;text-transform:uppercase;letter-spacing:0.14em;
+          color:var(--muted);margin-bottom:2px;
+        }
+        .correct-rank-row{
+          display:flex;align-items:center;justify-content:space-between;gap:12px;
+          background:rgba(255,255,255,0.06);
+          border:1px solid rgba(255,255,255,0.10);
+          border-radius:12px;padding:9px 12px;
+          font-size:13px;font-weight:700;color:var(--text);
+        }
+        .correct-rank-left{
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+        }
+        .correct-rank-time{
+          font-family:'Syne',sans-serif;font-weight:900;color:var(--accent);
+          flex-shrink:0;
         }
         .reveal-next{font-size:11px;color:var(--muted);margin-top:8px}
 
@@ -787,9 +825,18 @@ export default function RoomPage() {
                   <div className="reveal-label">Correct answer</div>
                   <div className="reveal-answer">{room.currentQuestion.answer}</div>
                   {correctPlayers.length > 0 && (
-                    <div className="correct-chips">
-                      {correctPlayers.map((pName) => (
-                        <span key={pName} className="correct-chip">✓ {pName}</span>
+                    <div className="correct-ranking">
+                      <div className="correct-ranking-title">Fastest correct answers</div>
+
+                      {correctPlayers.map((player, index) => (
+                        <div key={player.id} className="correct-rank-row">
+                          <span className="correct-rank-left">
+                            <strong>#{index + 1}</strong> {player.name}
+                          </span>
+                          <span className="correct-rank-time">
+                            {formatAnswerSpeed(player.timeTakenMs)}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   )}
