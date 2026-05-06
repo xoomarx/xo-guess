@@ -71,6 +71,7 @@ export default function RoomPage() {
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const soundUnlockedRef = useRef(false);
   const [lastPhase, setLastPhase] = useState<string | null>(null);
   const [gameEnded, setGameEnded] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -78,8 +79,9 @@ export default function RoomPage() {
 
   
   const isHost = Boolean(uid && room?.hostId === uid);
-
   function playSound(name: SoundName) {
+    if (!soundUnlockedRef.current && name !== "correct") return;
+
     const files: Record<SoundName, string> = {
       correct: "/sounds/correct.mp3",
       wrong: "/sounds/wrong.mp3",
@@ -88,7 +90,7 @@ export default function RoomPage() {
     };
 
     const audio = new Audio(files[name]);
-    audio.volume = 0.8;
+    audio.volume = 0.75;
 
     audio.play().catch((error) => {
       console.log("Sound failed:", name, error);
@@ -96,8 +98,18 @@ export default function RoomPage() {
   }
 
   function enableSound() {
-    setSoundEnabled(true);
-    playSound("correct");
+    const audio = new Audio("/sounds/correct.mp3");
+    audio.volume = 0.75;
+
+    audio
+      .play()
+      .then(() => {
+        soundUnlockedRef.current = true;
+        setSoundEnabled(true);
+      })
+      .catch((error) => {
+        console.log("Enable sound failed:", error);
+      });
   }
 
   useEffect(() => {
@@ -120,7 +132,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (room?.phase === "reveal" && lastPhase !== "reveal") {
-      if (soundEnabled) playSound("timer");
+      if (soundEnabled) if (soundUnlockedRef.current) playSound("timer");
       setLastPhase("reveal");
     }
     if (room?.phase === "question") setLastPhase("question");
@@ -128,7 +140,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (room?.status === "ended" && !gameEnded) {
-      if (soundEnabled) playSound("gameover");
+      if (soundEnabled) if (soundUnlockedRef.current) playSound("gameover");
       setGameEnded(true);
       if (!confettiRef.current) {
         confettiRef.current = true;
