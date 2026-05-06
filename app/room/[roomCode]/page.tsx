@@ -80,8 +80,6 @@ export default function RoomPage() {
   
   const isHost = Boolean(uid && room?.hostId === uid);
   function playSound(name: SoundName) {
-    if (!soundUnlockedRef.current) return;
-
     const files: Record<SoundName, string> = {
       correct: "/sounds/correct.mp3",
       wrong: "/sounds/wrong.mp3",
@@ -90,7 +88,7 @@ export default function RoomPage() {
     };
 
     const audio = new Audio(files[name]);
-    audio.volume = 0.75;
+    audio.volume = 1;
 
     audio.play().catch((error) => {
       console.log("Sound failed:", name, error);
@@ -98,15 +96,9 @@ export default function RoomPage() {
   }
 
   function enableSound() {
-    setSoundEnabled(true);
     soundUnlockedRef.current = true;
-
-    const audio = new Audio("/sounds/correct.mp3");
-    audio.volume = 0.75;
-
-    audio.play().catch((error) => {
-      console.log("Enable sound failed:", error);
-    });
+    setSoundEnabled(true);
+    playSound("correct");
   }
 
   useEffect(() => {
@@ -129,7 +121,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (room?.phase === "reveal" && lastPhase !== "reveal") {
-      if (soundEnabled) if (soundUnlockedRef.current) playSound("timer");
+      if (soundEnabled) if (soundUnlockedRef.current) if (soundUnlockedRef.current) playSound("timer");
       setLastPhase("reveal");
     }
     if (room?.phase === "question") setLastPhase("question");
@@ -137,7 +129,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (room?.status === "ended" && !gameEnded) {
-      if (soundEnabled) if (soundUnlockedRef.current) playSound("gameover");
+      if (soundEnabled) if (soundUnlockedRef.current) if (soundUnlockedRef.current) playSound("gameover");
       setGameEnded(true);
       if (!confettiRef.current) {
         confettiRef.current = true;
@@ -617,6 +609,13 @@ export default function RoomPage() {
                 >
                   {soundEnabled ? "🔊 Sound on" : "🔇 Sound off"}
                 </button>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => playSound("correct")}
+                  title="Test sound"
+                >
+                  Test sound
+                </button>
               </div>
             </div>
 
@@ -718,7 +717,19 @@ export default function RoomPage() {
 
               {/* Image */}
               <div className="img-box" key={room.questionIndex}>
-                <img src={room.currentQuestion.imageUrl} alt="Guess this" />
+                <img
+                  src={room.currentQuestion.imageUrl}
+                  alt="Guess this"
+                  onError={(event) => {
+                    const img = event.currentTarget;
+                    if (img.dataset.fallbackUsed === "true") return;
+                    img.dataset.fallbackUsed = "true";
+                    img.src =
+                      room.currentQuestion?.type === "logo"
+                        ? `https://www.google.com/s2/favicons?domain=${room.currentQuestion.answer.toLowerCase().replace(/\s+/g, "")}.com&sz=256`
+                        : "/favicon.ico";
+                  }}
+                />
               </div>
 
               {/* Answer input */}
