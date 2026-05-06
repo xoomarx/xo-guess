@@ -80,7 +80,7 @@ export default function RoomPage() {
   
   const isHost = Boolean(uid && room?.hostId === uid);
   function playSound(name: SoundName) {
-    if (!soundUnlockedRef.current && name !== "correct") return;
+    if (!soundUnlockedRef.current) return;
 
     const files: Record<SoundName, string> = {
       correct: "/sounds/correct.mp3",
@@ -95,18 +95,27 @@ export default function RoomPage() {
     audio.play().catch((error) => {
       console.log("Sound failed:", name, error);
     });
+  };
+
+    const audio = new Audio(files[name]);
+    audio.volume = 0.75;
+
+    audio.play().catch((error) => {
+      console.log("Sound failed:", name, error);
+    });
   }
 
   function enableSound() {
+    setSoundEnabled(true);
+    soundUnlockedRef.current = true;
+
     const audio = new Audio("/sounds/correct.mp3");
     audio.volume = 0.75;
 
-    audio
-      .play()
-      .then(() => {
-        soundUnlockedRef.current = true;
-        setSoundEnabled(true);
-      })
+    audio.play().catch((error) => {
+      console.log("Enable sound failed:", error);
+    });
+  })
       .catch((error) => {
         console.log("Enable sound failed:", error);
       });
