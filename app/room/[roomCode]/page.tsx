@@ -425,7 +425,18 @@ export default function RoomPage() {
 
   return (
     <>
-      <div className="calm-bg" />
+      <div className="motion-bg" aria-hidden="true">
+        <span className="bg-bar bar1" />
+        <span className="bg-bar bar2" />
+        <span className="bg-bar bar3" />
+        <span className="bg-bar bar4" />
+        <span className="bg-bar bar5" />
+        <span className="bg-bar bar6" />
+        <span className="bg-bar bar7" />
+        <span className="bg-bar bar8" />
+        <span className="bg-orb orb1" />
+        <span className="bg-orb orb2" />
+      </div>
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -437,7 +448,9 @@ export default function RoomPage() {
         }
         body{
           background:#050716;
-          color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;
+          color:var(--text);
+          font-family:'DM Sans',sans-serif;
+          min-height:100vh;
           overflow-x:hidden;
         }
 
@@ -453,18 +466,83 @@ export default function RoomPage() {
         @keyframes podium-in{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
         @keyframes crown-bounce{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-8px) rotate(8deg)}}
         @keyframes timer-warn{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-        .calm-bg{
+        @keyframes bgFloatA{
+          0%{transform:translate3d(0,0,0) rotate(-36deg)}
+          50%{transform:translate3d(18px,-28px,0) rotate(-36deg)}
+          100%{transform:translate3d(0,0,0) rotate(-36deg)}
+        }
+        @keyframes bgFloatB{
+          0%{transform:translate3d(0,0,0) rotate(-36deg)}
+          50%{transform:translate3d(-22px,24px,0) rotate(-36deg)}
+          100%{transform:translate3d(0,0,0) rotate(-36deg)}
+        }
+        @keyframes orbPulse{
+          0%,100%{transform:scale(1);opacity:.55}
+          50%{transform:scale(1.08);opacity:.8}
+        }
+
+        .motion-bg{
           position:fixed;
           inset:0;
+          overflow:hidden;
           z-index:-1;
           pointer-events:none;
           background:
-            radial-gradient(circle at 20% 18%, rgba(56,217,255,0.18), transparent 30%),
-            radial-gradient(circle at 82% 14%, rgba(167,139,250,0.16), transparent 32%),
-            radial-gradient(circle at 50% 90%, rgba(250,204,21,0.08), transparent 28%),
-            linear-gradient(135deg, #050716 0%, #081026 48%, #10102a 100%);
+            radial-gradient(circle at 20% 20%, rgba(0,188,255,0.16), transparent 26%),
+            radial-gradient(circle at 80% 18%, rgba(168,85,247,0.15), transparent 24%),
+            linear-gradient(135deg, #040713 0%, #07122d 42%, #11112d 100%);
+        }
+        .motion-bg::before{
+          content:"";
+          position:absolute;
+          inset:0;
+          background:
+            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px),
+            linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px);
+          background-size:72px 72px;
+          opacity:.22;
+        }
+        .bg-bar,.bg-orb{
+          position:absolute;
+          display:block;
+          filter:drop-shadow(0 10px 24px rgba(0,0,0,0.18));
+        }
+        .bg-bar{
+          height:54px;
+          border-radius:999px;
+          transform:rotate(-36deg);
+          opacity:.95;
+        }
+        .bar1{width:340px;left:-40px;top:70px;background:linear-gradient(90deg,#ff00d4,#8b5cf6);animation:bgFloatA 10s ease-in-out infinite;}
+        .bar2{width:420px;left:210px;top:18px;background:linear-gradient(90deg,#6d28d9,#3b82f6);animation:bgFloatB 11s ease-in-out infinite;}
+        .bar3{width:250px;right:120px;top:120px;background:linear-gradient(90deg,#a855f7,#ec4899);animation:bgFloatA 12s ease-in-out infinite;}
+        .bar4{width:420px;left:120px;top:320px;background:linear-gradient(90deg,rgba(22,53,120,.55),rgba(22,53,120,.10));height:64px;animation:bgFloatB 14s ease-in-out infinite;}
+        .bar5{width:290px;right:-40px;top:280px;background:linear-gradient(90deg,#4f46e5,#9333ea);animation:bgFloatA 13s ease-in-out infinite;}
+        .bar6{width:360px;left:-60px;bottom:160px;background:linear-gradient(90deg,#0ea5e9,#312e81);height:60px;animation:bgFloatB 15s ease-in-out infinite;}
+        .bar7{width:220px;right:260px;bottom:120px;background:linear-gradient(90deg,#d946ef,#7c3aed);animation:bgFloatA 9s ease-in-out infinite;}
+        .bar8{width:300px;right:-70px;bottom:40px;background:linear-gradient(90deg,rgba(17,41,91,.65),rgba(17,41,91,.12));height:68px;animation:bgFloatB 16s ease-in-out infinite;}
+
+        .bg-orb{
+          border-radius:999px;
+          animation:orbPulse 7s ease-in-out infinite;
+          opacity:.75;
+        }
+        .orb1{
+          width:96px;height:96px;
+          left:58%;
+          top:160px;
+          background:linear-gradient(135deg,#4f46e5,#9333ea);
+        }
+        .orb2{
+          width:88px;height:88px;
+          right:18%;
+          top:430px;
+          background:linear-gradient(135deg,#ec4899,#8b5cf6);
+          animation-delay:1.5s;
         }
         .page-layout{position:relative;z-index:1}
+
+        
 
 
 
@@ -559,8 +637,8 @@ export default function RoomPage() {
         /* Image box */
         .img-box{
           background:
-            radial-gradient(circle at 50% 45%, rgba(56,217,255,0.08), transparent 36%),
-            linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025));
+            radial-gradient(circle at 50% 45%, rgba(56,217,255,0.09), transparent 34%),
+            linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.020));
           border-radius:30px;padding:34px;
           margin:18px 0;display:flex;align-items:center;justify-content:center;
           min-height:230px;position:relative;overflow:hidden;
