@@ -99,7 +99,7 @@ const FLAG_ALIASES: Record<string, string[]> = {
   iq: ["iraq"],
   sy: ["syria"],
   jo: ["jordan"],
-  lb: ["lebanon"],
+ 
   kw: ["kuwait"],
   qa: ["qatar"],
   bh: ["bahrain"],
