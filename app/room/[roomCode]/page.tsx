@@ -81,10 +81,10 @@ export default function RoomPage() {
   const isHost = Boolean(uid && room?.hostId === uid);
   function playSound(name: SoundName) {
     const files: Record<SoundName, string> = {
-      correct: "/sounds/correct.mp3",
-      wrong: "/sounds/wrong.mp3",
-      timer: "/sounds/timer.mp3",
-      gameover: "/sounds/gameover.mp3",
+      correct: "/sounds/correct.wav",
+      wrong: "/sounds/wrong.wav",
+      timer: "/sounds/timer.wav",
+      gameover: "/sounds/gameover.wav",
     };
 
     const audio = new Audio(files[name]);
