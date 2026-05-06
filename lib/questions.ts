@@ -44,7 +44,6 @@ const FLAG_ALIASES: Record<string, string[]> = {
   cz: ["czechia", "czech republic"],
   nl: ["holland", "netherlands"],
   br: ["brasil", "brazil"],
-  lb: ["liban", "lebanon"],
   ru: ["russia", "russian federation"],
   cn: ["china", "prc", "peoples republic of china"],
   de: ["germany", "deutschland"],
@@ -99,7 +98,7 @@ const FLAG_ALIASES: Record<string, string[]> = {
   iq: ["iraq"],
   sy: ["syria"],
   jo: ["jordan"],
- 
+  lb: ["lebanon", "liban"],
   kw: ["kuwait"],
   qa: ["qatar"],
   bh: ["bahrain"],
@@ -261,7 +260,6 @@ const LOGOS: [string, string, string[]][] = [
   ["rockstargames", "Rockstar Games", ["rockstar", "gta"]],
 
   // Sports & Entertainment
-  ["spotify", "Spotify", []],
   ["nba", "NBA", []],
   ["nfl", "NFL", []],
   ["formula1", "Formula 1", ["f1", "formula one"]],
@@ -271,6 +269,19 @@ const LOGOS: [string, string, string[]][] = [
   ["uber", "Uber", []],
   ["airbnb", "Airbnb", ["air bnb"]],
   ["ubereats", "Uber Eats", ["uber eats"]],
+
+  ["target", "Target", []],
+  ["walmart", "Walmart", []],
+  ["ikea", "IKEA", []],
+  ["ebay", "eBay", []],
+  ["aliexpress", "AliExpress", ["ali express"]],
+  ["bookingdotcom", "Booking.com", ["booking"]],
+  ["doordash", "DoorDash", ["door dash"]],
+  ["deliveroo", "Deliveroo", []],
+  ["dropbox", "Dropbox", []],
+  ["adobe", "Adobe", []],
+  ["behance", "Behance", []],
+  ["dribbble", "Dribbble", []],
 
   // Education
   ["duolingo", "Duolingo", []],

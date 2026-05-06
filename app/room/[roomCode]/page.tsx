@@ -330,12 +330,19 @@ export default function RoomPage() {
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         :root{
-          --bg:#05080f;--surface:#0b1120;--surface2:#101828;--surface3:#141f30;
-          --border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.12);
-          --accent:#f0c040;--accent2:#4af0a0;--danger:#f05a4a;
-          --text:#e8edf5;--muted:#4a5a72;
+          --bg:#050716;--surface:#0d162c;--surface2:#1a2748;--surface3:#23345e;
+          --border:rgba(255,255,255,0.10);--border-hi:rgba(255,255,255,0.18);
+          --accent:#38d9ff;--accent2:#a78bfa;--danger:#fb7185;
+          --text:#f8fbff;--muted:#9aaccf;
         }
-        body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+        body{
+          background:
+            radial-gradient(circle at 18% 10%, rgba(56,217,255,0.14), transparent 28%),
+            radial-gradient(circle at 86% 18%, rgba(167,139,250,0.16), transparent 30%),
+            radial-gradient(circle at 50% 100%, rgba(250,204,21,0.08), transparent 26%),
+            linear-gradient(180deg,#050716,#0b1230);
+          color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;
+        }
 
         @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
         @keyframes popIn{0%{transform:scale(0.85);opacity:0}60%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
@@ -362,13 +369,18 @@ export default function RoomPage() {
 
         /* Cards */
         .card{
-          background:var(--surface);border:1px solid var(--border);
-          border-radius:22px;padding:24px;
+          background:linear-gradient(180deg, rgba(18,29,58,0.86), rgba(10,17,37,0.86));
+          border:1px solid var(--border);
+          border-radius:24px;padding:24px;
+          box-shadow:0 18px 48px rgba(0,0,0,0.30),0 0 28px rgba(56,217,255,0.06);
+          backdrop-filter:blur(14px);
         }
         .card-elevated{
-          background:var(--surface);border:1px solid var(--border-hi);
-          border-radius:22px;padding:24px;
-          box-shadow:0 24px 64px rgba(0,0,0,0.4);
+          background:linear-gradient(180deg, rgba(18,29,58,0.90), rgba(10,17,37,0.90));
+          border:1px solid var(--border-hi);
+          border-radius:26px;padding:26px;
+          box-shadow:0 28px 74px rgba(0,0,0,0.45),0 0 34px rgba(56,217,255,0.08);
+          backdrop-filter:blur(14px);
         }
 
         /* Header */
@@ -382,25 +394,25 @@ export default function RoomPage() {
         }
         .room-mode-badge{
           display:inline-block;margin-top:6px;margin-left:6px;
-          font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
-          color:var(--accent);background:rgba(240,192,64,0.08);
-          border:1px solid rgba(240,192,64,0.18);
+          font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;
+          color:var(--accent);background:rgba(56,217,255,0.10);
+          border:1px solid rgba(56,217,255,0.22);
           padding:4px 9px;border-radius:999px;
         }
         .btn-row{display:flex;gap:8px;flex-wrap:wrap}
 
         /* Buttons */
         .btn{
-          padding:9px 16px;border-radius:11px;border:none;
-          font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
-          cursor:pointer;transition:transform 0.12s,opacity 0.12s,background 0.15s;
+          padding:10px 17px;border-radius:14px;border:none;
+          font-family:'DM Sans',sans-serif;font-size:13px;font-weight:800;
+          cursor:pointer;transition:transform 0.14s,opacity 0.12s,background 0.15s,box-shadow 0.15s;
         }
         .btn:hover:not(:disabled){transform:translateY(-1px)}
         .btn:disabled{opacity:0.35;cursor:not-allowed}
-        .btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+        .btn-ghost{background:rgba(255,255,255,0.055);border:1px solid var(--border);color:var(--text);backdrop-filter:blur(8px)}
         .btn-ghost:hover:not(:disabled){background:var(--surface3);border-color:var(--border-hi)}
-        .btn-primary{background:var(--accent);color:#05080f;font-weight:700;box-shadow:0 4px 20px rgba(240,192,64,0.25)}
-        .btn-green{background:var(--accent2);color:#05080f;font-weight:700;box-shadow:0 4px 20px rgba(74,240,160,0.2)}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),#8be9ff);color:#04111b;font-weight:900;box-shadow:0 12px 28px rgba(56,217,255,0.24)}
+        .btn-green{background:linear-gradient(135deg,var(--accent2),#c4b5fd);color:#05080f;font-weight:900;box-shadow:0 12px 28px rgba(167,139,250,0.22)}
 
         /* Progress bar */
         .round-track{
@@ -435,11 +447,12 @@ export default function RoomPage() {
 
         /* Image box */
         .img-box{
-          background:#fff;border-radius:18px;padding:32px;
+          background:linear-gradient(180deg,rgba(255,255,255,0.98),rgba(238,245,255,0.96));
+          border-radius:26px;padding:34px;
           margin:18px 0;display:flex;align-items:center;justify-content:center;
-          min-height:200px;position:relative;overflow:hidden;
+          min-height:220px;position:relative;overflow:hidden;
           animation:popIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
-          box-shadow:0 8px 32px rgba(0,0,0,0.3);
+          box-shadow:0 18px 44px rgba(0,0,0,0.28),0 0 0 1px rgba(255,255,255,0.45) inset;
         }
         .img-box img{max-width:100%;max-height:160px;object-fit:contain;position:relative;z-index:1}
 
@@ -461,10 +474,11 @@ export default function RoomPage() {
 
         /* Reveal */
         .reveal-box{
-          background:rgba(5,8,15,0.9);border:1px solid rgba(74,240,160,0.2);
-          border-radius:18px;padding:22px;text-align:center;margin-bottom:16px;
+          background:linear-gradient(180deg,rgba(56,217,255,0.12),rgba(167,139,250,0.12));
+          border:1px solid rgba(56,217,255,0.26);
+          border-radius:22px;padding:24px;text-align:center;margin-bottom:16px;
           animation:reveal-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
-          box-shadow:0 0 40px rgba(74,240,160,0.07);
+          box-shadow:0 0 42px rgba(56,217,255,0.12);
         }
         .reveal-label{font-size:10px;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:10px}
         .reveal-answer{
