@@ -76,6 +76,7 @@ export default function RoomPage() {
   const [gameEnded, setGameEnded] = useState(false);
   const [copied, setCopied] = useState(false);
   const confettiRef = useRef(false);
+  const lastTimerSoundSecondRef = useRef<number | null>(null);
 
   
   const isHost = Boolean(uid && room?.hostId === uid);
