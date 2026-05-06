@@ -75,13 +75,14 @@ export default function RoomPage() {
   const [lastPhase, setLastPhase] = useState<string | null>(null);
   const [gameEnded, setGameEnded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const answerInputRef = useRef<HTMLInputElement | null>(null);
   const confettiRef = useRef(false);
   const lastTimerSoundSecondRef = useRef<number | null>(null);
 
   
   const isHost = Boolean(uid && room?.hostId === uid);
   function playSound(name: SoundName, maxDurationMs?: number) {
-    if (!soundUnlockedRef.current) return;
+    if (!soundUnlockedRef.current && name !== "correct") return;
 
     const files: Record<SoundName, string> = {
       correct: "/sounds/correct.wav",
@@ -112,9 +113,15 @@ export default function RoomPage() {
   }
 
   function enableSound() {
-    soundUnlockedRef.current = true;
     setSoundEnabled(true);
-    playSound("correct");
+    soundUnlockedRef.current = true;
+
+    const audio = new Audio("/sounds/correct.wav");
+    audio.volume = 0.75;
+
+    audio.play().catch((error) => {
+      console.log("Enable sound failed:", error);
+    });
   }
 
   useEffect(() => {
@@ -134,6 +141,17 @@ export default function RoomPage() {
     });
     return () => unsubscribe();
   }, [roomCode]);
+
+  useEffect(() => {
+    if (room?.status !== "playing") return;
+    if (room?.phase !== "question") return;
+
+    const focusTimer = setTimeout(() => {
+      answerInputRef.current?.focus();
+    }, 80);
+
+    return () => clearTimeout(focusTimer);
+  }, [room?.status, room?.phase, room?.questionIndex]);
 
   useEffect(() => {
     if (room?.phase === "reveal" && lastPhase !== "reveal") {
@@ -240,7 +258,7 @@ export default function RoomPage() {
       phase: "question",
       revealStartedAt: null,
     });
-    setAnswer(""); setFeedback(null);
+    setAnswer(""); setFeedback(null); lastTimerSoundSecondRef.current = null; lastTimerSoundSecondRef.current = null;
   }
 
   async function nextQuestion() {
@@ -262,7 +280,7 @@ export default function RoomPage() {
       phase: "question",
       revealStartedAt: null,
     });
-    setAnswer(""); setFeedback(null);
+    setAnswer(""); setFeedback(null); lastTimerSoundSecondRef.current = null;
   }
 
   async function submitAnswer() {
@@ -277,20 +295,41 @@ export default function RoomPage() {
       playSound("wrong");
       setAnswer("");
       setFeedback({ text: "Wrong — try again!", ok: false });
+      setTimeout(() => {
+        answerInputRef.current?.focus();
+      }, 80);
       return;
     }
     const currentScore = room.players?.[uid]?.score || 0;
     const serverNow = Date.now() + serverOffset;
     const elapsed = Math.floor((serverNow - (room.roundStartedAt || serverNow)) / 1000);
     const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
-    const earnedPoints = remaining >= 11 ? 3 : remaining >= 6 ? 2 : 1;
-    await update(ref(db, `rooms/${roomCode}`), {
+    const earnedPoints = Math.max(1, remaining);
+    const totalPlayers = Object.keys(room.players || {}).length;
+    const alreadyCorrectCount = Object.values(room.roundAnswers?.[questionKey] || {}).filter(
+      (result) => result.correct
+    ).length;
+    const everyoneAnswered = totalPlayers > 0 && alreadyCorrectCount + 1 >= totalPlayers;
+
+    const updates: Record<string, unknown> = {
       [`players/${uid}/score`]: currentScore + earnedPoints,
       [`roundAnswers/${questionKey}/${uid}`]: { correct: true },
-    });
+    };
+
+    if (everyoneAnswered) {
+      updates.phase = "reveal";
+      updates.revealStartedAt = serverTimestamp();
+    }
+
+    await update(ref(db, `rooms/${roomCode}`), updates);
+
     playSound("correct");
     setFeedback({ text: `+${earnedPoints} pts! ⚡`, ok: true });
     setAnswer("");
+
+    setTimeout(() => {
+      answerInputRef.current?.focus();
+    }, 80);
   }
 
   function copyInvite() {
@@ -752,6 +791,7 @@ export default function RoomPage() {
               {/* Answer input */}
               <div className="answer-row">
                 <input
+                  ref={answerInputRef}
                   className={`answer-input ${alreadyAnswered ? "answered" : ""}`}
                   placeholder={alreadyAnswered ? "✓ Answered correctly!" : "Type your answer…"}
                   value={answer}
@@ -873,9 +913,9 @@ export default function RoomPage() {
             </div>
             <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
               {[
-                { label:"Lightning fast", sub:"11–15s left", pts:3, color:"var(--accent2)" },
-                { label:"Quick", sub:"6–10s left", pts:2, color:"var(--accent)" },
-                { label:"Just in time", sub:"1–5s left", pts:1, color:"var(--muted)" },
+                { label:"Exact speed", sub:"Points = seconds left", value:"15→1", color:"var(--accent2)" },
+                { label:"Example", sub:"Answer with 12s left", value:"+12", color:"var(--accent)" },
+                { label:"Minimum", sub:"Last-second answer", value:"+1", color:"var(--muted)" },
               ].map((row) => (
                 <div key={row.label} style={{ display:"flex",alignItems:"center",justifyContent:"space-between" }}>
                   <div>
@@ -883,7 +923,7 @@ export default function RoomPage() {
                     <div style={{ fontSize:11 }}>{row.sub}</div>
                   </div>
                   <div style={{ fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:15,color:row.color }}>
-                    +{row.pts}
+                    {row.value}
                   </div>
                 </div>
               ))}
