@@ -425,6 +425,8 @@ export default function RoomPage() {
 
   return (
     <>
+      <div className="video-bg" />
+      <div className="stars" />
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -435,12 +437,9 @@ export default function RoomPage() {
           --text:#f8fbff;--muted:#9aaccf;
         }
         body{
-          background:
-            radial-gradient(circle at 18% 10%, rgba(56,217,255,0.14), transparent 28%),
-            radial-gradient(circle at 86% 18%, rgba(167,139,250,0.16), transparent 30%),
-            radial-gradient(circle at 50% 100%, rgba(250,204,21,0.08), transparent 26%),
-            linear-gradient(180deg,#050716,#0b1230);
+          background:#050716;
           color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;
+          overflow-x:hidden;
         }
 
         @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
@@ -455,11 +454,55 @@ export default function RoomPage() {
         @keyframes podium-in{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
         @keyframes crown-bounce{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-8px) rotate(8deg)}}
         @keyframes timer-warn{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+        @keyframes auroraShift{
+          0%{transform:translate3d(-3%,-2%,0) scale(1);filter:hue-rotate(0deg)}
+          50%{transform:translate3d(3%,2%,0) scale(1.08);filter:hue-rotate(24deg)}
+          100%{transform:translate3d(-3%,-2%,0) scale(1);filter:hue-rotate(0deg)}
+        }
+        @keyframes starDrift{
+          from{transform:translateY(0)}
+          to{transform:translateY(-120px)}
+        }
+
+        .video-bg{
+          position:fixed;inset:0;z-index:-3;overflow:hidden;
+          background:#050716;
+        }
+        .video-bg::before{
+          content:"";position:absolute;inset:-20%;
+          background:
+            radial-gradient(circle at 18% 22%, rgba(56,217,255,0.28), transparent 24%),
+            radial-gradient(circle at 78% 18%, rgba(167,139,250,0.30), transparent 28%),
+            radial-gradient(circle at 50% 78%, rgba(244,114,182,0.18), transparent 32%),
+            radial-gradient(circle at 25% 85%, rgba(250,204,21,0.12), transparent 22%);
+          animation:auroraShift 12s ease-in-out infinite;
+          filter:blur(2px);
+        }
+        .video-bg::after{
+          content:"";position:absolute;inset:0;
+          background:
+            linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.030) 1px, transparent 1px);
+          background-size:54px 54px;
+          mask-image:linear-gradient(to bottom, transparent, black 18%, black 76%, transparent);
+          opacity:.32;
+        }
+        .stars{
+          position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.45;
+          background-image:
+            radial-gradient(circle, rgba(255,255,255,.55) 1px, transparent 1.5px),
+            radial-gradient(circle, rgba(56,217,255,.38) 1px, transparent 1.5px);
+          background-size:120px 120px, 180px 180px;
+          background-position:0 0, 40px 70px;
+          animation:starDrift 18s linear infinite;
+        }
+        .page-layout{position:relative;z-index:1}
+
 
         /* Layout */
         .page-layout{
           display:grid;grid-template-columns:1fr 272px;gap:16px;
-          max-width:920px;margin:0 auto;padding:20px;min-height:100vh;align-items:start;
+          max-width:980px;margin:0 auto;padding:22px;min-height:100vh;align-items:start;
         }
         @media(max-width:720px){
           .page-layout{grid-template-columns:1fr}
@@ -468,18 +511,18 @@ export default function RoomPage() {
 
         /* Cards */
         .card{
-          background:linear-gradient(180deg, rgba(18,29,58,0.86), rgba(10,17,37,0.86));
-          border:1px solid var(--border);
-          border-radius:24px;padding:24px;
-          box-shadow:0 18px 48px rgba(0,0,0,0.30),0 0 28px rgba(56,217,255,0.06);
-          backdrop-filter:blur(14px);
+          background:linear-gradient(180deg, rgba(20,32,68,0.78), rgba(8,14,35,0.74));
+          border:1px solid rgba(255,255,255,0.13);
+          border-radius:26px;padding:24px;
+          box-shadow:0 24px 70px rgba(0,0,0,0.38),0 0 42px rgba(56,217,255,0.10);
+          backdrop-filter:blur(18px);
         }
         .card-elevated{
-          background:linear-gradient(180deg, rgba(18,29,58,0.90), rgba(10,17,37,0.90));
-          border:1px solid var(--border-hi);
-          border-radius:26px;padding:26px;
-          box-shadow:0 28px 74px rgba(0,0,0,0.45),0 0 34px rgba(56,217,255,0.08);
-          backdrop-filter:blur(14px);
+          background:linear-gradient(180deg, rgba(20,32,68,0.82), rgba(8,14,35,0.80));
+          border:1px solid rgba(255,255,255,0.16);
+          border-radius:30px;padding:28px;
+          box-shadow:0 34px 90px rgba(0,0,0,0.50),0 0 54px rgba(56,217,255,0.12);
+          backdrop-filter:blur(18px);
         }
 
         /* Header */
@@ -508,9 +551,9 @@ export default function RoomPage() {
         }
         .btn:hover:not(:disabled){transform:translateY(-1px)}
         .btn:disabled{opacity:0.35;cursor:not-allowed}
-        .btn-ghost{background:rgba(255,255,255,0.055);border:1px solid var(--border);color:var(--text);backdrop-filter:blur(8px)}
+        .btn-ghost{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);color:var(--text);backdrop-filter:blur(10px)}
         .btn-ghost:hover:not(:disabled){background:var(--surface3);border-color:var(--border-hi)}
-        .btn-primary{background:linear-gradient(135deg,var(--accent),#8be9ff);color:#04111b;font-weight:900;box-shadow:0 12px 28px rgba(56,217,255,0.24)}
+        .btn-primary{background:linear-gradient(135deg,#38d9ff,#a78bfa);color:#04111b;font-weight:900;box-shadow:0 14px 34px rgba(56,217,255,0.30)}
         .btn-green{background:linear-gradient(135deg,var(--accent2),#c4b5fd);color:#05080f;font-weight:900;box-shadow:0 12px 28px rgba(167,139,250,0.22)}
 
         /* Progress bar */
@@ -546,22 +589,33 @@ export default function RoomPage() {
 
         /* Image box */
         .img-box{
-          background:linear-gradient(180deg,rgba(255,255,255,0.98),rgba(238,245,255,0.96));
-          border-radius:26px;padding:34px;
+          background:
+            radial-gradient(circle at 50% 45%, rgba(56,217,255,0.10), transparent 38%),
+            linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025));
+          border-radius:30px;padding:34px;
           margin:18px 0;display:flex;align-items:center;justify-content:center;
-          min-height:220px;position:relative;overflow:hidden;
+          min-height:230px;position:relative;overflow:hidden;
           animation:popIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
-          box-shadow:0 18px 44px rgba(0,0,0,0.28),0 0 0 1px rgba(255,255,255,0.45) inset;
+          box-shadow:0 24px 60px rgba(0,0,0,0.32),0 0 0 1px rgba(255,255,255,0.10) inset;
+          backdrop-filter:blur(16px);
         }
-        .img-box img{max-width:100%;max-height:160px;object-fit:contain;position:relative;z-index:1}
+        .img-box img{
+          max-width:100%;
+          max-height:165px;
+          object-fit:contain;
+          position:relative;
+          z-index:1;
+          filter:drop-shadow(0 18px 28px rgba(0,0,0,0.28));
+        }
 
         /* Answer input */
         .answer-row{display:flex;gap:10px;margin-top:6px}
         .answer-input{
-          flex:1;background:var(--surface2);border:1px solid var(--border);
+          flex:1;background:rgba(255,255,255,0.075);border:1px solid rgba(255,255,255,0.14);
           color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;
-          padding:13px 16px;border-radius:13px;outline:none;
-          transition:border-color 0.2s,box-shadow 0.2s;
+          padding:14px 16px;border-radius:16px;outline:none;
+          transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;
+          box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
         }
         .answer-input:focus{border-color:rgba(240,192,64,0.4);box-shadow:0 0 0 3px rgba(240,192,64,0.07)}
         .answer-input::placeholder{color:var(--muted)}
