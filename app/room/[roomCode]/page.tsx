@@ -95,14 +95,6 @@ export default function RoomPage() {
     audio.play().catch((error) => {
       console.log("Sound failed:", name, error);
     });
-  };
-
-    const audio = new Audio(files[name]);
-    audio.volume = 0.75;
-
-    audio.play().catch((error) => {
-      console.log("Sound failed:", name, error);
-    });
   }
 
   function enableSound() {
@@ -115,10 +107,6 @@ export default function RoomPage() {
     audio.play().catch((error) => {
       console.log("Enable sound failed:", error);
     });
-  })
-      .catch((error) => {
-        console.log("Enable sound failed:", error);
-      });
   }
 
   useEffect(() => {
