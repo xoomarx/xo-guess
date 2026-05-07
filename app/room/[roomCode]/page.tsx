@@ -338,11 +338,6 @@ export default function RoomPage() {
       streak: room?.players?.[uid]?.streak || 0,
       bestStreak: room?.players?.[uid]?.bestStreak || 0,
       typing: false,
-      avatar: room?.players?.[uid]?.avatar || pickAvatar(playerName),
-      color: room?.players?.[uid]?.color || pickPlayerColor(playerName),
-      streak: room?.players?.[uid]?.streak || 0,
-      bestStreak: room?.players?.[uid]?.bestStreak || 0,
-      typing: false,
     });
   }
 
