@@ -61,43 +61,54 @@ type SoundName = "correct" | "wrong" | "timer" | "gameover";
 
 
 const FUNNY_AVATARS = [
-  { id: "brainrot-king", label: "Brainrot King", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=BrainrotKing&backgroundColor=b6e3f4,c0aede,ffd5dc" },
-  { id: "skibidi-boss", label: "Skibidi Boss", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=SkibidiBoss&backgroundColor=d1d4f9,c0aede,b6e3f4" },
-  { id: "sigma-stare", label: "Sigma Stare", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SigmaStare&backgroundColor=ffdfbf,b6e3f4,c0aede" },
-  { id: "aura-farmer", label: "Aura Farmer", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=AuraFarmer&backgroundColor=fff1ba,c0aede,b6e3f4" },
-  { id: "rizz-goblin", label: "Rizz Goblin", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=RizzGoblin&backgroundColor=ffd5dc,ffdfbf,d1d4f9" },
-  { id: "delulu-duck", label: "Delulu Duck", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=DeluluDuck&backgroundColor=b6e3f4,ffd5dc,fff1ba" },
-  { id: "ohio-wizard", label: "Ohio Wizard", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=OhioWizard&backgroundColor=c0aede,ffdfbf,d1d4f9" },
-  { id: "npc-streamer", label: "NPC Streamer", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=NPCStreamer&backgroundColor=b6e3f4,d1d4f9,ffd5dc" },
-  { id: "goofy-ahh", label: "Goofy Ahh", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=GoofyAhh&backgroundColor=ffdfbf,b6e3f4,c0aede" },
-  { id: "cooked-cat", label: "Cooked Cat", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=CookedCat&backgroundColor=ffd5dc,c0aede,b6e3f4" },
-  { id: "locked-in", label: "Locked In", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=LockedIn&backgroundColor=d1d4f9,b6e3f4,ffdfbf" },
-  { id: "side-eye", label: "Side Eye", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SideEye&backgroundColor=fff1ba,c0aede,ffd5dc" },
-
-  { id: "italian-shark", label: "Sneaker Shark", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=SneakerShark&backgroundColor=b6e3f4,d1d4f9,c0aede" },
-  { id: "cappuccino-baller", label: "Cappuccino Baller", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=CappuccinoBaller&backgroundColor=ffdfbf,fff1ba,ffd5dc" },
-  { id: "crocodile-plane", label: "Croc Plane", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=CrocPlane&backgroundColor=c0aede,b6e3f4,ffdfbf" },
-  { id: "patapim-tree", label: "Patapim Tree", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=PatapimTree&backgroundColor=d1d4f9,fff1ba,b6e3f4" },
-  { id: "lobster-don", label: "Don Lobster", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=DonLobster&backgroundColor=ffd5dc,b6e3f4,c0aede" },
+  { id: "brainrot-shark", label: "Brainrot Shark", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=TralaleroShark&backgroundColor=b6e3f4,c0aede,d1d4f9" },
+  { id: "skibidi-ceo", label: "Skibidi CEO", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=SkibidiCEO2026&backgroundColor=ffd5dc,c0aede,b6e3f4" },
+  { id: "sigma-boss", label: "Sigma Boss", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SigmaBoss&backgroundColor=ffdfbf,b6e3f4,c0aede" },
+  { id: "aura-maxxer", label: "Aura Maxxer", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=AuraMaxxer&backgroundColor=c0aede,b6e3f4,fff1ba" },
+  { id: "rizz-wizard", label: "Rizz Wizard", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=RizzWizard&backgroundColor=d1d4f9,ffd5dc,c0aede" },
+  { id: "delulu-queen", label: "Delulu Queen", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=DeluluQueen&backgroundColor=ffd5dc,ffdfbf,d1d4f9" },
+  { id: "ohio-final-boss", label: "Ohio Final Boss", url: "https://api.dicebear.com/7.x/croodles/svg?seed=OhioFinalBoss&backgroundColor=b6e3f4,fff1ba,c0aede" },
+  { id: "npc-legend", label: "NPC Legend", url: "https://api.dicebear.com/7.x/personas/svg?seed=NPCLegend&backgroundColor=d1d4f9,b6e3f4,ffdfbf" },
+  { id: "goofy gremlin", label: "Goofy Gremlin", url: "https://api.dicebear.com/7.x/big-smile/svg?seed=GoofyGremlin&backgroundColor=ffdfbf,ffd5dc,b6e3f4" },
+  { id: "cooked-cat", label: "Cooked Cat", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=CookedCat2026&backgroundColor=ffd5dc,c0aede,b6e3f4" },
+  { id: "locked-in-larry", label: "Locked-In Larry", url: "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=LockedInLarry&backgroundColor=b6e3f4,d1d4f9,c0aede" },
+  { id: "side-eye-sam", label: "Side-Eye Sam", url: "https://api.dicebear.com/7.x/big-ears/svg?seed=SideEyeSam&backgroundColor=fff1ba,c0aede,ffd5dc" },
+  { id: "cappuccino-baller", label: "Cappuccino Baller", url: "https://api.dicebear.com/7.x/lorelei-neutral/svg?seed=CappuccinoBaller&backgroundColor=ffdfbf,fff1ba,ffd5dc" },
+  { id: "croc-plane", label: "Croc Plane", url: "https://api.dicebear.com/7.x/bottts/svg?seed=CrocPlane&backgroundColor=c0aede,b6e3f4,ffdfbf" },
+  { id: "don-lobster", label: "Don Lobster", url: "https://api.dicebear.com/7.x/croodles-neutral/svg?seed=DonLobster&backgroundColor=ffd5dc,b6e3f4,c0aede" },
   { id: "mango-maniac", label: "Mango Maniac", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=MangoManiac&backgroundColor=fff1ba,ffdfbf,c0aede" },
-  { id: "toilet-ceo", label: "Toilet CEO", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=ToiletCEO&backgroundColor=d1d4f9,c0aede,ffd5dc" },
-  { id: "67-bandit", label: "67 Bandit", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SixtySevenBandit&backgroundColor=b6e3f4,ffdfbf,d1d4f9" },
-
-  { id: "chill-guy", label: "Chill Guy Energy", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=ChillGuyEnergy&backgroundColor=c0aede,b6e3f4,fff1ba" },
-  { id: "yapper-3000", label: "Yapper 3000", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Yapper3000&backgroundColor=ffd5dc,d1d4f9,b6e3f4" },
-  { id: "crashout", label: "Crashout Gremlin", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=CrashoutGremlin&backgroundColor=ffdfbf,ffd5dc,c0aede" },
-  { id: "low-taper", label: "Low Taper Legend", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=LowTaperLegend&backgroundColor=b6e3f4,c0aede,d1d4f9" },
-  { id: "sus-nugget", label: "Sus Nugget", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=SusNugget&backgroundColor=fff1ba,ffd5dc,ffdfbf" },
-  { id: "rage-baiter", label: "Rage Baiter", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=RageBaiter&backgroundColor=d1d4f9,ffd5dc,c0aede" },
+  { id: "toilet-tycoon", label: "Toilet Tycoon", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=ToiletTycoon&backgroundColor=d1d4f9,c0aede,ffd5dc" },
+  { id: "sixty-seven", label: "67 Bandit", url: "https://api.dicebear.com/7.x/pixel-art/svg?seed=SixtySevenBandit&backgroundColor=b6e3f4,ffdfbf,d1d4f9" },
+  { id: "chill-guy", label: "Chill Guy", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=ChillGuyEnergy&backgroundColor=c0aede,b6e3f4,fff1ba" },
+  { id: "yapper-9000", label: "Yapper 9000", url: "https://api.dicebear.com/7.x/bottts/svg?seed=Yapper9000&backgroundColor=ffd5dc,d1d4f9,b6e3f4" },
+  { id: "crashout-kid", label: "Crashout Kid", url: "https://api.dicebear.com/7.x/big-smile/svg?seed=CrashoutKid&backgroundColor=ffdfbf,ffd5dc,c0aede" },
+  { id: "low-taper", label: "Low Taper", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=LowTaperLegend&backgroundColor=b6e3f4,c0aede,d1d4f9" },
+  { id: "sus-nugget", label: "Sus Nugget", url: "https://api.dicebear.com/7.x/thumbs/svg?seed=SusNugget&backgroundColor=fff1ba,ffd5dc,ffdfbf" },
+  { id: "rage-bait", label: "Rage Bait", url: "https://api.dicebear.com/7.x/personas/svg?seed=RageBait&backgroundColor=d1d4f9,ffd5dc,c0aede" },
   { id: "ratio-robot", label: "Ratio Robot", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=RatioRobot&backgroundColor=b6e3f4,c0aede,ffdfbf" },
-  { id: "gyatt-goblin", label: "Gyatt Goblin", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=GyattGoblin&backgroundColor=ffd5dc,c0aede,fff1ba" },
-
-  { id: "pixel-bot", label: "Pixel Bot", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=PixelBot&backgroundColor=b6e3f4,c0aede,d1d4f9" },
-  { id: "toast-bot", label: "Toast Bot", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=ToastBot&backgroundColor=ffd5dc,ffdfbf,c0aede" },
-  { id: "alien-bot", label: "Alien Bot", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=AlienBot&backgroundColor=c0aede,b6e3f4,d1d4f9" },
-  { id: "chaos-frog", label: "Chaos Frog", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=ChaosFrog&backgroundColor=b6e3f4,fff1ba,c0aede" },
-  { id: "sir-goof", label: "Sir Goof", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SirGoof&backgroundColor=ffdfbf,c0aede,b6e3f4" },
-  { id: "captain-meme", label: "Captain Meme", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=CaptainMeme&backgroundColor=b6e3f4,d1d4f9,ffd5dc" },
+  { id: "gyatt-goblin", label: "Gyatt Goblin", url: "https://api.dicebear.com/7.x/big-ears-neutral/svg?seed=GyattGoblin&backgroundColor=ffd5dc,c0aede,fff1ba" },
+  { id: "doom-scroller", label: "Doom Scroller", url: "https://api.dicebear.com/7.x/miniavs/svg?seed=DoomScroller&backgroundColor=c0aede,d1d4f9,b6e3f4" },
+  { id: "meme-merchant", label: "Meme Merchant", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=MemeMerchant&backgroundColor=ffdfbf,c0aede,b6e3f4" },
+  { id: "ping-spammer", label: "Ping Spammer", url: "https://api.dicebear.com/7.x/bottts/svg?seed=PingSpammer&backgroundColor=d1d4f9,fff1ba,ffd5dc" },
+  { id: "lag-monster", label: "Lag Monster", url: "https://api.dicebear.com/7.x/croodles/svg?seed=LagMonster&backgroundColor=b6e3f4,c0aede,ffdfbf" },
+  { id: "noob-master", label: "Noob Master", url: "https://api.dicebear.com/7.x/pixel-art-neutral/svg?seed=NoobMaster&backgroundColor=ffd5dc,b6e3f4,d1d4f9" },
+  { id: "clutch-demon", label: "Clutch Demon", url: "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=ClutchDemon&backgroundColor=ffdfbf,d1d4f9,c0aede" },
+  { id: "quiz-menace", label: "Quiz Menace", url: "https://api.dicebear.com/7.x/big-smile/svg?seed=QuizMenace&backgroundColor=fff1ba,b6e3f4,ffd5dc" },
+  { id: "tab-switcher", label: "Tab Switcher", url: "https://api.dicebear.com/7.x/personas/svg?seed=TabSwitcher&backgroundColor=c0aede,ffdfbf,b6e3f4" },
+  { id: "keyboard-warrior", label: "Keyboard Warrior", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=KeyboardWarrior&backgroundColor=b6e3f4,ffd5dc,c0aede" },
+  { id: "sleepy-winner", label: "Sleepy Winner", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=SleepyWinner&backgroundColor=d1d4f9,fff1ba,c0aede" },
+  { id: "banana-mode", label: "Banana Mode", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=BananaMode&backgroundColor=fff1ba,ffdfbf,ffd5dc" },
+  { id: "pickle-energy", label: "Pickle Energy", url: "https://api.dicebear.com/7.x/croodles-neutral/svg?seed=PickleEnergy&backgroundColor=b6e3f4,c0aede,d1d4f9" },
+  { id: "alien-yapper", label: "Alien Yapper", url: "https://api.dicebear.com/7.x/bottts/svg?seed=AlienYapper&backgroundColor=c0aede,d1d4f9,ffd5dc" },
+  { id: "final-boss-baby", label: "Final Boss Baby", url: "https://api.dicebear.com/7.x/big-ears/svg?seed=FinalBossBaby&backgroundColor=ffd5dc,ffdfbf,b6e3f4" },
+  { id: "giga-brain", label: "Giga Brain", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=GigaBrain&backgroundColor=d1d4f9,b6e3f4,c0aede" },
+  { id: "wifi-goblin", label: "WiFi Goblin", url: "https://api.dicebear.com/7.x/miniavs/svg?seed=WifiGoblin&backgroundColor=ffdfbf,c0aede,fff1ba" },
+  { id: "sweat-mode", label: "Sweat Mode", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SweatMode&backgroundColor=b6e3f4,d1d4f9,ffdfbf" },
+  { id: "random-main", label: "Random Main", url: "https://api.dicebear.com/7.x/pixel-art/svg?seed=RandomMain&backgroundColor=ffd5dc,b6e3f4,c0aede" },
+  { id: "mute-button", label: "Mute Button", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=MuteButton&backgroundColor=c0aede,ffd5dc,d1d4f9" },
+  { id: "quiz-goblin", label: "Quiz Goblin", url: "https://api.dicebear.com/7.x/big-smile/svg?seed=QuizGoblin2026&backgroundColor=fff1ba,c0aede,b6e3f4" },
+  { id: "sauce-lord", label: "Sauce Lord", url: "https://api.dicebear.com/7.x/personas/svg?seed=SauceLord&backgroundColor=ffdfbf,ffd5dc,c0aede" },
+  { id: "victory-merchant", label: "Victory Merchant", url: "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=VictoryMerchant&backgroundColor=b6e3f4,fff1ba,d1d4f9" },
 ];
 
 const PLAYER_COLORS = ["#38d9ff", "#a78bfa", "#facc15", "#4af0a0", "#fb7185", "#f472b6", "#60a5fa"];
@@ -1118,20 +1129,25 @@ export default function RoomPage() {
         
         .avatar-picker-grid{
           display:grid;
-          grid-template-columns:repeat(auto-fill,minmax(58px,1fr));
-          gap:10px;
+          grid-template-columns:repeat(auto-fill,minmax(84px,1fr));
+          gap:12px;
           margin:14px 0 4px;
-          max-height:260px;
+          max-height:330px;
           overflow-y:auto;
-          padding-right:4px;
+          padding-right:6px;
         }
         .avatar-card{
           border:1px solid rgba(255,255,255,0.12);
-          background:rgba(255,255,255,0.04);
-          border-radius:16px;
-          padding:6px;
+          background:rgba(255,255,255,0.045);
+          border-radius:18px;
+          padding:8px 7px 7px;
           cursor:pointer;
           transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+          min-height:112px;
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          gap:6px;
         }
         .avatar-card:hover{transform:translateY(-2px);border-color:rgba(56,217,255,0.45)}
         .avatar-card.selected{
@@ -1140,12 +1156,22 @@ export default function RoomPage() {
           box-shadow:0 0 0 2px rgba(56,217,255,0.16),0 10px 24px rgba(56,217,255,0.14);
         }
         .avatar-card img{
-          width:100%;
-          aspect-ratio:1/1;
+          width:58px;
+          height:58px;
           object-fit:cover;
           display:block;
-          border-radius:12px;
+          border-radius:16px;
           background:rgba(255,255,255,0.06);
+        }
+        .avatar-card span{
+          max-width:100%;
+          overflow:hidden;
+          text-overflow:ellipsis;
+          white-space:nowrap;
+          font-size:10px;
+          font-weight:800;
+          color:var(--muted);
+          text-align:center;
         }
         .avatar-badge img{
           width:100%;
@@ -1278,6 +1304,7 @@ export default function RoomPage() {
                     title={avatar.label}
                   >
                     <img src={avatar.url} alt={avatar.label} />
+                    <span>{avatar.label}</span>
                   </button>
                 ))}
               </div>
