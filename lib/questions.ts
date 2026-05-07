@@ -6,6 +6,7 @@ export type Question = {
 };
 
 export type GameMode = "flags" | "logos" | "mix";
+export type Difficulty = "easy" | "medium" | "hard";
 
 const FLAG_CODES = [
   "ad","ae","af","ag","al","am","ao","ar","at","au","az",
@@ -315,6 +316,21 @@ export function getQuestionsByMode(mode: GameMode): Question[] {
   return QUESTIONS;
 }
 
+export function getQuestionsByModeAndDifficulty(
+  mode: GameMode,
+  difficulty: Difficulty | "all" = "all"
+): Question[] {
+  const pool = getQuestionsByMode(mode);
+
+  if (difficulty === "all") return pool;
+
+  // Keeps this lightweight: the curated list is ordered from more common to more niche.
+  const chunk = Math.ceil(pool.length / 3);
+  if (difficulty === "easy") return pool.slice(0, chunk);
+  if (difficulty === "medium") return pool.slice(chunk, chunk * 2);
+  return pool.slice(chunk * 2);
+}
+
 export function normalizeAnswer(text: string) {
   return text
     .trim()
@@ -336,9 +352,10 @@ export function getRandomQuestion(usedIndexes: number[] = []) {
 
 export function getRandomQuestionByMode(
   usedIndexes: number[] = [],
-  mode: GameMode = "mix"
+  mode: GameMode = "mix",
+  difficulty: Difficulty | "all" = "all"
 ) {
-  const pool = getQuestionsByMode(mode);
+  const pool = getQuestionsByModeAndDifficulty(mode, difficulty);
 
   // Map to global QUESTIONS indexes so Firebase stays consistent
   const poolWithIndexes = pool.map((q) => ({

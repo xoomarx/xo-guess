@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ref, set, get } from "firebase/database";
 import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
-import type { GameMode } from "../lib/questions";
+import type { GameMode, Difficulty } from "../lib/questions";
 
 function createRoomCode() {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -25,6 +25,10 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [gameMode, setGameMode] = useState<GameMode>("mix");
+  const [rounds, setRounds] = useState(10);
+  const [timerSeconds, setTimerSeconds] = useState(15);
+  const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
+  const [customCode, setCustomCode] = useState("");
 
   async function getOrSignIn() {
     if (auth.currentUser) return auth.currentUser;
@@ -35,12 +39,26 @@ export default function Home() {
   async function createRoom() {
     if (!name.trim()) return;
     setLoading(true);
+    setJoinError("");
     const user = await getOrSignIn();
-    const roomCode = createRoomCode();
+    const requestedCode = customCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const roomCode = requestedCode || createRoomCode();
+
+    if (requestedCode) {
+      const existing = await get(ref(db, `rooms/${roomCode}`));
+      if (existing.exists()) {
+        setJoinError("That custom room code is already taken.");
+        setLoading(false);
+        return;
+      }
+    }
     await set(ref(db, `rooms/${roomCode}`), {
       hostId: user.uid,
       status: "lobby",
       gameMode,
+      totalRounds: rounds,
+      timerSeconds,
+      difficulty,
       questionIndex: 0,
       players: { [user.uid]: { name: name.trim(), score: 0 } },
     });
@@ -267,6 +285,27 @@ export default function Home() {
         .mode-desc { font-size:10px;color:var(--muted);text-align:center; }
         .mode-btn.selected .mode-desc { color:inherit;opacity:0.7; }
 
+
+        .settings-grid{
+          display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;
+        }
+        .setting-card{
+          display:flex;flex-direction:column;gap:6px;
+          background:rgba(255,255,255,0.04);
+          border:1px solid var(--border);
+          border-radius:14px;padding:10px;
+        }
+        .setting-card span,.custom-code-wrap span{
+          font-size:10px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;color:var(--muted);
+        }
+        .setting-card select{
+          background:transparent;border:none;color:var(--text);font-weight:800;outline:none;
+        }
+        .setting-card option{background:#101828;color:white}
+        .custom-code-wrap{
+          display:flex;flex-direction:column;gap:7px;margin-top:10px;
+        }
+
         /* Tabs */
         .tabs {
           display:grid;grid-template-columns:1fr 1fr;
@@ -414,6 +453,48 @@ export default function Home() {
                   </button>
                 ))}
               </div>
+
+              <div className="settings-grid">
+                <label className="setting-card">
+                  <span>Rounds</span>
+                  <select value={rounds} onChange={(e) => setRounds(Number(e.target.value))}>
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={15}>15</option>
+                    <option value={20}>20</option>
+                  </select>
+                </label>
+
+                <label className="setting-card">
+                  <span>Timer</span>
+                  <select value={timerSeconds} onChange={(e) => setTimerSeconds(Number(e.target.value))}>
+                    <option value={10}>10s</option>
+                    <option value={15}>15s</option>
+                    <option value={20}>20s</option>
+                  </select>
+                </label>
+
+                <label className="setting-card">
+                  <span>Difficulty</span>
+                  <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty | "all")}>
+                    <option value="all">All</option>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </label>
+              </div>
+
+              <label className="custom-code-wrap">
+                <span>Custom room code</span>
+                <input
+                  className="field code-field"
+                  placeholder="OPTIONAL"
+                  value={customCode}
+                  onChange={(e) => setCustomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))}
+                  maxLength={8}
+                />
+              </label>
             </div>
           )}
 
@@ -446,6 +527,7 @@ export default function Home() {
                   maxLength={20}
                 />
               </div>
+              {joinError && <div className="error-msg">⚠ {joinError}</div>}
               <button className="cta-btn" onClick={createRoom} disabled={!name.trim() || loading}>
                 {loading ? "Creating room…" : "Create Game →"}
               </button>
@@ -497,6 +579,11 @@ export default function Home() {
               <span className="feature-icon">⚡</span>
               <div className="feature-title">Speed</div>
               <div className="feature-desc">Fast = more pts</div>
+            </div>
+            <div className="feature">
+              <span className="feature-icon">🏆</span>
+              <div className="feature-title">Daily</div>
+              <div className="feature-desc">Challenge ready</div>
             </div>
           </div>
         </div>

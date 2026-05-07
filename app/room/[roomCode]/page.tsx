@@ -6,13 +6,31 @@ import { onValue, ref, update, serverTimestamp } from "firebase/database";
 import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "../../../lib/firebase";
 import { getRandomQuestionByMode, isCorrectAnswer } from "../../../lib/questions";
-import type { GameMode } from "../../../lib/questions";
+import type { GameMode, Difficulty } from "../../../lib/questions";
 
 const TIMER_SECONDS = 15;
 const TOTAL_ROUNDS = 10;
 const REVEAL_SECONDS = 3;
 
-type Player = { name: string; score: number };
+type PlayerHistoryItem = {
+  round: number;
+  answer: string;
+  correct: boolean;
+  points: number;
+  speed: number;
+  correctAnswer: string;
+};
+
+type Player = {
+  name: string;
+  score: number;
+  avatar?: string;
+  color?: string;
+  streak?: number;
+  bestStreak?: number;
+  typing?: boolean;
+  history?: Record<string, PlayerHistoryItem>;
+};
 type Question = {
   type: "flag" | "logo";
   imageUrl: string;
@@ -33,8 +51,24 @@ type Room = {
   roundAnswers?: Record<string, Record<string, { correct: boolean; timeTakenMs?: number; answeredAt?: number }>>;
   players?: Record<string, Player>;
   gameMode?: GameMode;
+  timerSeconds?: number;
+  difficulty?: Difficulty | "all";
 };
 type SoundName = "correct" | "wrong" | "timer" | "gameover";
+
+
+const AVATARS = ["🦊", "🐼", "🐸", "🐵", "🐯", "🐺", "🦁", "🐨", "🐙", "🦄", "🐲", "🦅"];
+const PLAYER_COLORS = ["#38d9ff", "#a78bfa", "#facc15", "#4af0a0", "#fb7185", "#f472b6", "#60a5fa"];
+
+function pickAvatar(seed: string) {
+  const total = seed.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return AVATARS[total % AVATARS.length];
+}
+
+function pickPlayerColor(seed: string) {
+  const total = seed.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return PLAYER_COLORS[total % PLAYER_COLORS.length];
+}
 
 // Simple confetti burst helper
 function spawnConfetti(container: HTMLElement) {
@@ -71,6 +105,8 @@ export default function RoomPage() {
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [serverOffset, setServerOffset] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(0.75);
   const soundUnlockedRef = useRef(false);
   const [lastPhase, setLastPhase] = useState<string | null>(null);
   const [gameEnded, setGameEnded] = useState(false);
@@ -82,7 +118,7 @@ export default function RoomPage() {
   
   const isHost = Boolean(uid && room?.hostId === uid);
   function playSound(name: SoundName, maxDurationMs?: number) {
-    if (!soundUnlockedRef.current && name !== "correct") return;
+    if ((!soundUnlockedRef.current && name !== "correct") || muted) return;
 
     const files: Record<SoundName, string> = {
       correct: "/sounds/correct.wav",
@@ -90,6 +126,27 @@ export default function RoomPage() {
       timer: "/sounds/timer.wav",
       gameover: "/sounds/gameover.wav",
     };
+
+    const audio = new Audio(files[name]);
+    audio.volume = name === "timer" ? Math.min(volume, 0.45) : volume;
+
+    let stopTimer: ReturnType<typeof setTimeout> | undefined;
+
+    audio.play().catch((error) => {
+      console.log("Sound failed:", name, error);
+    });
+
+    if (maxDurationMs) {
+      stopTimer = setTimeout(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      }, maxDurationMs);
+    }
+
+    audio.onended = () => {
+      if (stopTimer) clearTimeout(stopTimer);
+    };
+  };
 
     const audio = new Audio(files[name]);
     audio.volume = name === "timer" ? 0.45 : 0.75;
@@ -117,7 +174,7 @@ export default function RoomPage() {
     soundUnlockedRef.current = true;
 
     const audio = new Audio("/sounds/correct.wav");
-    audio.volume = 0.75;
+    audio.volume = volume;
 
     audio.play().catch((error) => {
       console.log("Enable sound failed:", error);
@@ -235,7 +292,7 @@ export default function RoomPage() {
       }
       if (!room.roundStartedAt) return;
       const elapsed = Math.floor((serverNow - room.roundStartedAt) / 1000);
-      const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
+      const remaining = Math.max((room.timerSeconds || TIMER_SECONDS) - elapsed, 0);
       setTimeLeft(remaining);
       if (remaining === 0 && isHost && room.phase !== "reveal") {
         clearInterval(interval);
@@ -266,17 +323,22 @@ export default function RoomPage() {
     await update(ref(db, `rooms/${roomCode}/players/${uid}`), {
       name: playerName,
       score: room?.players?.[uid]?.score || 0,
+      avatar: room?.players?.[uid]?.avatar || pickAvatar(playerName),
+      color: room?.players?.[uid]?.color || pickPlayerColor(playerName),
+      streak: room?.players?.[uid]?.streak || 0,
+      bestStreak: room?.players?.[uid]?.bestStreak || 0,
+      typing: false,
     });
   }
 
   async function startGame() {
     const mode = room?.gameMode || "mix";
-    const random = getRandomQuestionByMode([], mode);
+    const random = getRandomQuestionByMode([], mode, room?.difficulty || "all");
     await update(ref(db, `rooms/${roomCode}`), {
       status: "playing",
       questionIndex: random.index,
       roundNumber: 1,
-      totalRounds: TOTAL_ROUNDS,
+      totalRounds: room?.totalRounds || TOTAL_ROUNDS,
       usedQuestionIndexes: [random.index],
       currentQuestion: random.question,
       roundStartedAt: serverTimestamp(),
@@ -289,13 +351,13 @@ export default function RoomPage() {
 
   async function nextQuestion() {
     const currentRound = room?.roundNumber || 1;
-    if (currentRound >= TOTAL_ROUNDS) {
+    if (currentRound >= (room?.totalRounds || TOTAL_ROUNDS)) {
       await update(ref(db, `rooms/${roomCode}`), { status: "ended" });
       return;
     }
     const used = room?.usedQuestionIndexes || [];
     const mode = room?.gameMode || "mix";
-    const random = getRandomQuestionByMode(used, mode);
+    const random = getRandomQuestionByMode(used, mode, room?.difficulty || "all");
     await update(ref(db, `rooms/${roomCode}`), {
       status: "playing",
       questionIndex: random.index,
@@ -309,6 +371,40 @@ export default function RoomPage() {
     setAnswer(""); setFeedback(null); lastTimerSoundSecondRef.current = null;
   }
 
+
+  function handleAnswerChange(value: string) {
+    setAnswer(value);
+    setFeedback(null);
+
+    if (uid && room?.status === "playing" && room?.phase === "question") {
+      update(ref(db, `rooms/${roomCode}/players/${uid}`), {
+        typing: value.trim().length > 0,
+      });
+    }
+  }
+
+
+  async function skipQuestion() {
+    if (!isHost || room?.status !== "playing") return;
+
+    await update(ref(db, `rooms/${roomCode}`), {
+      phase: "reveal",
+      revealStartedAt: serverTimestamp(),
+    });
+  }
+
+  async function endGame() {
+    if (!isHost) return;
+    await update(ref(db, `rooms/${roomCode}`), {
+      status: "ended",
+    });
+  }
+
+  async function restartGame() {
+    if (!isHost) return;
+    await startGame();
+  }
+
   async function submitAnswer() {
     if (!room?.currentQuestion || room.phase === "reveal" || !uid) return;
     if (timeLeft <= 0) { setFeedback({ text: "Time is up!", ok: false }); return; }
@@ -319,6 +415,20 @@ export default function RoomPage() {
     const correct = isCorrectAnswer(answer, room.currentQuestion);
     if (!correct) {
       playSound("wrong");
+
+      await update(ref(db, `rooms/${roomCode}`), {
+        [`players/${uid}/streak`]: 0,
+        [`players/${uid}/typing`]: false,
+        [`players/${uid}/history/${questionKey}`]: {
+          round: room.roundNumber || 1,
+          answer,
+          correct: false,
+          points: 0,
+          speed: 0,
+          correctAnswer: room.currentQuestion.answer,
+        },
+      });
+
       setAnswer("");
       setFeedback({ text: "Wrong — try again!", ok: false });
       setTimeout(() => {
@@ -330,8 +440,12 @@ export default function RoomPage() {
     const serverNow = Date.now() + serverOffset;
     const elapsedMs = Math.max(0, serverNow - (room.roundStartedAt || serverNow));
     const elapsed = Math.floor(elapsedMs / 1000);
-    const remaining = Math.max(TIMER_SECONDS - elapsed, 0);
-    const earnedPoints = Math.max(1, remaining);
+    const remaining = Math.max((room.timerSeconds || TIMER_SECONDS) - elapsed, 0);
+    const basePoints = Math.max(1, remaining);
+    const currentStreak = room.players?.[uid]?.streak || 0;
+    const newStreak = currentStreak + 1;
+    const streakBonus = newStreak >= 3 ? Math.min(10, newStreak * 2) : 0;
+    const earnedPoints = basePoints + streakBonus;
     const totalPlayers = Object.keys(room.players || {}).length;
     const alreadyCorrectCount = Object.values(room.roundAnswers?.[questionKey] || {}).filter(
       (result) => result.correct
@@ -340,6 +454,17 @@ export default function RoomPage() {
 
     const updates: Record<string, unknown> = {
       [`players/${uid}/score`]: currentScore + earnedPoints,
+      [`players/${uid}/streak`]: newStreak,
+      [`players/${uid}/bestStreak`]: Math.max(room.players?.[uid]?.bestStreak || 0, newStreak),
+      [`players/${uid}/typing`]: false,
+      [`players/${uid}/history/${questionKey}`]: {
+        round: room.roundNumber || 1,
+        answer,
+        correct: true,
+        points: earnedPoints,
+        speed: remaining,
+        correctAnswer: room.currentQuestion.answer,
+      },
       [`roundAnswers/${questionKey}/${uid}`]: {
         correct: true,
         timeTakenMs: elapsedMs,
@@ -355,7 +480,7 @@ export default function RoomPage() {
     await update(ref(db, `rooms/${roomCode}`), updates);
 
     playSound("correct");
-    setFeedback({ text: `+${earnedPoints} pts! ⚡`, ok: true });
+    setFeedback({ text: streakBonus > 0 ? `+${earnedPoints} pts! 🔥 ${newStreak} streak` : `+${earnedPoints} pts! ⚡`, ok: true });
     setAnswer("");
 
     setTimeout(() => {
@@ -369,9 +494,13 @@ export default function RoomPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  const roundSeconds = room?.timerSeconds || TIMER_SECONDS;
+  const totalRounds = room?.totalRounds || TOTAL_ROUNDS;
+  const difficulty = room?.difficulty || "all";
+
   const timerPct = room?.phase === "reveal"
     ? (timeLeft / REVEAL_SECONDS) * 100
-    : (timeLeft / TIMER_SECONDS) * 100;
+    : (timeLeft / roundSeconds) * 100;
   const timerColor = timerPct > 50 ? "#4af0a0" : timerPct > 25 ? "#f0c040" : "#f05a4a";
   const timerGlow = timerPct > 50
     ? "rgba(74,240,160,0.4)"
@@ -415,11 +544,11 @@ export default function RoomPage() {
 
   const circumference = 2 * Math.PI * 28;
   const isReveal = room.phase === "reveal";
-  const maxTime = isReveal ? REVEAL_SECONDS : TIMER_SECONDS;
+  const maxTime = isReveal ? REVEAL_SECONDS : roundSeconds;
   const dashOffset = circumference * (1 - timeLeft / maxTime);
 
   function formatAnswerSpeed(timeTakenMs: number) {
-    const secondsLeft = Math.max(0, TIMER_SECONDS - timeTakenMs / 1000);
+    const secondsLeft = Math.max(0, roundSeconds - timeTakenMs / 1000);
     return `${secondsLeft.toFixed(2)}s`;
   }
 
@@ -795,6 +924,29 @@ export default function RoomPage() {
         .podium-block.p3{height:40px;background:rgba(200,128,96,0.12);border:1px solid rgba(200,128,96,0.25);animation:podium-in 0.6s 0.4s ease both}
 
         /* Sound button active */
+
+        .host-controls{
+          display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);
+        }
+        .danger-btn{color:#fecdd3!important;border-color:rgba(251,113,133,0.28)!important;background:rgba(251,113,133,0.08)!important}
+        .volume-slider{width:86px;accent-color:var(--accent);align-self:center}
+        .typing-pill{
+          color:var(--accent);font-size:10px;font-weight:800;margin-left:6px;
+        }
+        .avatar-badge{
+          display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;
+          margin-right:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
+        }
+        .streak-pill{
+          margin-left:8px;color:#facc15;font-size:11px;font-weight:900;
+        }
+        .history-list{display:flex;flex-direction:column;gap:7px;margin-top:18px}
+        .history-row{
+          display:flex;align-items:center;justify-content:space-between;gap:8px;
+          padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.045);
+          font-size:12px;color:var(--muted);
+        }
+
         .btn-sound-on{
           background:rgba(74,240,160,0.1);border-color:rgba(74,240,160,0.3);
           color:var(--accent2);
@@ -836,6 +988,19 @@ export default function RoomPage() {
                 >
                   Test sound
                 </button>
+                <button className="btn btn-ghost" onClick={() => setMuted((value) => !value)}>
+                  {muted ? "🔇 Muted" : "🔈 SFX"}
+                </button>
+                <input
+                  aria-label="Volume"
+                  className="volume-slider"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={volume}
+                  onChange={(e) => setVolume(Number(e.target.value))}
+                />
               </div>
             </div>
 
@@ -856,6 +1021,14 @@ export default function RoomPage() {
                   </span>
                 </div>
               </>
+            )}
+
+            {isHost && room.status === "playing" && (
+              <div className="host-controls">
+                <button className="btn btn-ghost" onClick={skipQuestion}>⏭ Skip</button>
+                <button className="btn btn-ghost" onClick={restartGame}>🔁 Restart</button>
+                <button className="btn btn-ghost danger-btn" onClick={endGame}>⛔ End</button>
+              </div>
             )}
           </div>
 
@@ -878,7 +1051,19 @@ export default function RoomPage() {
                 <button className="btn btn-primary" onClick={joinRoom} disabled={!name.trim()}>
                   Join Game
                 </button>
-                {isHost && (
+                {sortedPlayers[0]?.history && (
+                <div className="history-list">
+                  <div className="sidebar-title">Winner history</div>
+                  {Object.values(sortedPlayers[0].history || {}).slice(-5).map((item) => (
+                    <div key={item.round} className="history-row">
+                      <span>{item.correct ? "✅" : "❌"} R{item.round}: {item.correctAnswer}</span>
+                      <strong>{item.correct ? `+${item.points}` : "+0"}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {isHost && (
                   <button className="btn btn-green" onClick={startGame} disabled={players.length === 0}>
                     ▶ Start Game
                   </button>
@@ -968,7 +1153,7 @@ export default function RoomPage() {
                   className={`answer-input ${alreadyAnswered ? "answered" : ""}`}
                   placeholder={alreadyAnswered ? "✓ Answered correctly!" : "Type your answer…"}
                   value={answer}
-                  onChange={(e) => { setAnswer(e.target.value); setFeedback(null); }}
+                  onChange={(e) => handleAnswerChange(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !alreadyAnswered && !isReveal && submitAnswer()}
                   disabled={isReveal || timeLeft === 0 || !!alreadyAnswered}
                   autoFocus
@@ -1034,6 +1219,18 @@ export default function RoomPage() {
                 </div>
               ))}
 
+              {sortedPlayers[0]?.history && (
+                <div className="history-list">
+                  <div className="sidebar-title">Winner history</div>
+                  {Object.values(sortedPlayers[0].history || {}).slice(-5).map((item) => (
+                    <div key={item.round} className="history-row">
+                      <span>{item.correct ? "✅" : "❌"} R{item.round}: {item.correctAnswer}</span>
+                      <strong>{item.correct ? `+${item.points}` : "+0"}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {isHost && (
                 <button
                   className="btn btn-green"
@@ -1071,7 +1268,18 @@ export default function RoomPage() {
                 ) : (
                   <span className="player-rank-num">#{index + 1}</span>
                 )}
-                <span className="player-name">{player.name}</span>
+                <span className="avatar-badge" style={{ borderColor: player.color || "rgba(255,255,255,0.12)" }}>
+                  {player.avatar || "🎮"}
+                </span>
+                <span className="player-name">
+                  {player.name}
+                  {player.typing && room.status === "playing" && room.phase === "question" && (
+                    <span className="typing-pill">typing…</span>
+                  )}
+                  {(player.streak || 0) >= 3 && (
+                    <span className="streak-pill">🔥{player.streak}</span>
+                  )}
+                </span>
                 <span className="player-score">
                   {displayScores[player.name] ?? player.score}
                 </span>
@@ -1089,6 +1297,7 @@ export default function RoomPage() {
                 { label:"Exact speed", sub:"Points = seconds left", value:"15→1", color:"var(--accent2)" },
                 { label:"Example", sub:"Answer with 12s left", value:"+12", color:"var(--accent)" },
                 { label:"Minimum", sub:"Last-second answer", value:"+1", color:"var(--muted)" },
+                { label:"Streak bonus", sub:"3+ correct in a row", value:"+6+", color:"var(--accent2)" },
               ].map((row) => (
                 <div key={row.label} style={{ display:"flex",alignItems:"center",justifyContent:"space-between" }}>
                   <div>
