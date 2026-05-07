@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ref, set, get } from "firebase/database";
 import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
+import { getRandomQuestionByMode } from "../lib/questions";
 import type { GameMode, Difficulty } from "../lib/questions";
 
 function createRoomCode() {
@@ -64,6 +65,56 @@ export default function Home() {
     });
     localStorage.setItem("name", name.trim());
     router.push(`/room/${roomCode}`);
+  }
+
+
+  async function createSoloGame() {
+    if (!name.trim()) return;
+    setLoading(true);
+
+    const user = await getOrSignIn();
+    const roomCode = createRoomCode();
+    const first = getRandomQuestionByMode([], gameMode, difficulty);
+
+    await set(ref(db, `rooms/${roomCode}`), {
+      hostId: user.uid,
+      status: "playing",
+      solo: true,
+      gameMode,
+      totalRounds: rounds,
+      timerSeconds,
+      difficulty,
+      questionIndex: first.index,
+      roundNumber: 1,
+      usedQuestionIndexes: [first.index],
+      currentQuestion: first.question,
+      roundStartedAt: Date.now(),
+      roundAnswers: {},
+      phase: "question",
+      revealStartedAt: null,
+      players: {
+        [user.uid]: {
+          name: name.trim(),
+          score: 0,
+          avatar: "🎮",
+          color: "#38d9ff",
+          streak: 0,
+          bestStreak: 0,
+          typing: false,
+        },
+      },
+    });
+
+    localStorage.setItem("name", name.trim());
+    router.push(`/room/${roomCode}`);
+  }
+
+  async function createDailyChallenge() {
+    setGameMode("mix");
+    setRounds(10);
+    setTimerSeconds(15);
+    setDifficulty("all");
+    await createSoloGame();
   }
 
   async function joinRoom() {
@@ -531,6 +582,15 @@ export default function Home() {
               <button className="cta-btn" onClick={createRoom} disabled={!name.trim() || loading}>
                 {loading ? "Creating room…" : "Create Game →"}
               </button>
+
+              <div className="quick-actions">
+                <button className="tab" onClick={createSoloGame} disabled={!name.trim() || loading}>
+                  🎯 Solo Practice
+                </button>
+                <button className="tab" onClick={createDailyChallenge} disabled={!name.trim() || loading}>
+                  📅 Daily Challenge
+                </button>
+              </div>
             </div>
           )}
 

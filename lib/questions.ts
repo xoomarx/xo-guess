@@ -1,6 +1,7 @@
 export type Question = {
   type: "flag" | "logo";
   imageUrl: string;
+  fallbackUrl?: string;
   answer: string;
   acceptedAnswers: string[];
 };
@@ -301,12 +302,21 @@ export const FLAG_QUESTIONS: Question[] = FLAG_CODES.map((code) => {
   };
 });
 
-export const LOGO_QUESTIONS: Question[] = LOGOS.map(([domain, answer, extras]) => ({
-  type: "logo" as const,
-  imageUrl: `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
-  answer,
-  acceptedAnswers: [answer, ...extras],
-}));
+export const LOGO_QUESTIONS: Question[] = LOGOS.map(([domain, answer, extras]) => {
+  const localFileName = answer
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return {
+    type: "logo" as const,
+    imageUrl: `/logos/${localFileName}.png`,
+    fallbackUrl: `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
+    answer,
+    acceptedAnswers: [answer, ...extras],
+  };
+});
 
 export const QUESTIONS: Question[] = [...FLAG_QUESTIONS, ...LOGO_QUESTIONS];
 

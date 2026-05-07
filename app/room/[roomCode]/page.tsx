@@ -34,6 +34,7 @@ type Player = {
 type Question = {
   type: "flag" | "logo";
   imageUrl: string;
+  fallbackUrl?: string;
   answer: string;
   acceptedAnswers: string[];
 };
@@ -53,6 +54,8 @@ type Room = {
   gameMode?: GameMode;
   timerSeconds?: number;
   difficulty?: Difficulty | "all";
+  solo?: boolean;
+  reactions?: Record<string, { emoji: string; name: string; createdAt: number }>;
 };
 type SoundName = "correct" | "wrong" | "timer" | "gameover";
 
@@ -107,6 +110,8 @@ export default function RoomPage() {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(0.75);
+  const [musicEnabled, setMusicEnabled] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState("");
   const soundUnlockedRef = useRef(false);
   const [lastPhase, setLastPhase] = useState<string | null>(null);
   const [gameEnded, setGameEnded] = useState(false);
@@ -114,6 +119,7 @@ export default function RoomPage() {
   const answerInputRef = useRef<HTMLInputElement | null>(null);
   const confettiRef = useRef(false);
   const lastTimerSoundSecondRef = useRef<number | null>(null);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
 
   
   const isHost = Boolean(uid && room?.hostId === uid);
@@ -163,7 +169,32 @@ export default function RoomPage() {
   useEffect(() => {
     const savedName = localStorage.getItem("name");
     if (savedName) setName(savedName);
+    setCurrentUrl(window.location.href);
   }, []);
+
+  useEffect(() => {
+    musicRef.current = new Audio("/sounds/music.wav");
+    musicRef.current.loop = true;
+    musicRef.current.volume = 0.25;
+
+    return () => {
+      musicRef.current?.pause();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!musicRef.current) return;
+
+    musicRef.current.volume = muted ? 0 : Math.min(volume, 0.35);
+
+    if (musicEnabled && !muted) {
+      musicRef.current.play().catch((error) => {
+        console.log("Music failed:", error);
+      });
+    } else {
+      musicRef.current.pause();
+    }
+  }, [musicEnabled, muted, volume]);
 
   useEffect(() => {
     if (auth.currentUser) setUid(auth.currentUser.uid);
@@ -307,6 +338,11 @@ export default function RoomPage() {
       streak: room?.players?.[uid]?.streak || 0,
       bestStreak: room?.players?.[uid]?.bestStreak || 0,
       typing: false,
+      avatar: room?.players?.[uid]?.avatar || pickAvatar(playerName),
+      color: room?.players?.[uid]?.color || pickPlayerColor(playerName),
+      streak: room?.players?.[uid]?.streak || 0,
+      bestStreak: room?.players?.[uid]?.bestStreak || 0,
+      typing: false,
     });
   }
 
@@ -382,6 +418,44 @@ export default function RoomPage() {
   async function restartGame() {
     if (!isHost) return;
     await startGame();
+  }
+
+
+  async function skipQuestion() {
+    if (!isHost || room?.status !== "playing") return;
+
+    await update(ref(db, `rooms/${roomCode}`), {
+      phase: "reveal",
+      revealStartedAt: serverTimestamp(),
+    });
+  }
+
+  async function endGame() {
+    if (!isHost) return;
+
+    await update(ref(db, `rooms/${roomCode}`), {
+      status: "ended",
+    });
+  }
+
+  async function restartGame() {
+    if (!isHost) return;
+    await startGame();
+  }
+
+  async function sendReaction(emoji: string) {
+    if (!uid) return;
+
+    await update(ref(db, `rooms/${roomCode}/reactions/${uid}`), {
+      emoji,
+      name: room?.players?.[uid]?.name || name || "Player",
+      createdAt: Date.now(),
+    });
+  }
+
+  function toggleMusic() {
+    setMusicEnabled((value) => !value);
+    soundUnlockedRef.current = true;
   }
 
   async function submitAnswer() {
@@ -525,6 +599,49 @@ export default function RoomPage() {
   const isReveal = room.phase === "reveal";
   const maxTime = isReveal ? REVEAL_SECONDS : roundSeconds;
   const dashOffset = circumference * (1 - timeLeft / maxTime);
+
+  const allHistory = sortedPlayers.flatMap((player) =>
+    Object.values(player.history || {}).map((item) => ({
+      ...item,
+      playerName: player.name,
+      bestStreak: player.bestStreak || 0,
+    }))
+  );
+
+  const correctHistory = allHistory.filter((item) => item.correct);
+  const fastestAnswer = correctHistory.sort((a, b) => b.speed - a.speed)[0];
+  const bestStreakPlayer = sortedPlayers
+    .slice()
+    .sort((a, b) => (b.bestStreak || 0) - (a.bestStreak || 0))[0];
+  const mostAccuratePlayer = sortedPlayers
+    .slice()
+    .sort((a, b) => {
+      const aHistory = Object.values(a.history || {});
+      const bHistory = Object.values(b.history || {});
+      const aAccuracy = aHistory.length ? aHistory.filter((item) => item.correct).length / aHistory.length : 0;
+      const bAccuracy = bHistory.length ? bHistory.filter((item) => item.correct).length / bHistory.length : 0;
+      return bAccuracy - aAccuracy;
+    })[0];
+
+  const gameStats = {
+    fastestAnswer,
+    bestStreakPlayer,
+    mostAccuratePlayer,
+  };
+
+  function getAchievements(player: Player) {
+    const history = Object.values(player.history || {});
+    const correctCount = history.filter((item) => item.correct).length;
+    const fastCount = history.filter((item) => item.correct && item.speed >= roundSeconds - 2).length;
+    const achievements: string[] = [];
+
+    if (fastCount > 0) achievements.push("⚡ Speed Demon");
+    if ((player.bestStreak || 0) >= 5) achievements.push("🔥 On Fire");
+    if (correctCount >= 10) achievements.push("🏆 Master");
+    if (player.score >= 100) achievements.push("💎 Century Club");
+
+    return achievements;
+  }
 
   function formatAnswerSpeed(timeTakenMs: number) {
     const secondsLeft = Math.max(0, roundSeconds - timeTakenMs / 1000);
@@ -1101,14 +1218,17 @@ export default function RoomPage() {
                 <img
                   src={room.currentQuestion.imageUrl}
                   alt="Guess this"
+                  draggable={false}
+                  onContextMenu={(event) => event.preventDefault()}
                   onError={(event) => {
                     const img = event.currentTarget;
                     if (img.dataset.fallbackUsed === "true") return;
                     img.dataset.fallbackUsed = "true";
                     img.src =
-                      room.currentQuestion?.type === "logo"
+                      room.currentQuestion?.fallbackUrl ||
+                      (room.currentQuestion?.type === "logo"
                         ? `https://www.google.com/s2/favicons?domain=${room.currentQuestion.answer.toLowerCase().replace(/\s+/g, "")}.com&sz=256`
-                        : "/favicon.ico";
+                        : "/favicon.ico");
                   }}
                 />
               </div>
@@ -1137,6 +1257,24 @@ export default function RoomPage() {
               {feedback && (
                 <div className={feedback.ok ? "feedback-ok" : "feedback-err"}>
                   {feedback.text}
+                </div>
+              )}
+
+              <div className="reaction-bar">
+                {["😂", "🔥", "😡", "GG"].map((emoji) => (
+                  <button key={emoji} className="btn btn-ghost reaction-btn" onClick={() => sendReaction(emoji)}>
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+
+              {room.reactions && (
+                <div className="reaction-float">
+                  {Object.entries(room.reactions).slice(-6).map(([id, reaction]) => (
+                    <span key={id} className="reaction-pill">
+                      {reaction.emoji} {reaction.name}
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
@@ -1178,6 +1316,47 @@ export default function RoomPage() {
                   </div>
                 )}
               </div>
+
+              <div className="stat-grid">
+                <div className="stat-card">
+                  <div className="stat-label">Fastest</div>
+                  <div className="stat-value">
+                    {gameStats.fastestAnswer ? `${gameStats.fastestAnswer.playerName} +${gameStats.fastestAnswer.speed}` : "—"}
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">Best Streak</div>
+                  <div className="stat-value">
+                    {gameStats.bestStreakPlayer ? `${gameStats.bestStreakPlayer.name} 🔥${gameStats.bestStreakPlayer.bestStreak || 0}` : "—"}
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">Most Accurate</div>
+                  <div className="stat-value">
+                    {gameStats.mostAccuratePlayer?.name || "—"}
+                  </div>
+                </div>
+              </div>
+
+              {sortedPlayers[0] && (
+                <div className="achievement-list">
+                  {getAchievements(sortedPlayers[0]).map((achievement) => (
+                    <span key={achievement} className="achievement-chip">{achievement}</span>
+                  ))}
+                </div>
+              )}
+
+              {sortedPlayers[0]?.history && (
+                <div className="history-list">
+                  <div className="sidebar-title">Winner history</div>
+                  {Object.values(sortedPlayers[0].history || {}).slice(-5).map((item) => (
+                    <div key={item.round} className="history-row">
+                      <span>{item.correct ? "✅" : "❌"} R{item.round}: {item.correctAnswer}</span>
+                      <strong>{item.correct ? `+${item.points}` : "+0"}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Rest of players */}
               {sortedPlayers.slice(3).map((p, i) => (
@@ -1264,6 +1443,7 @@ export default function RoomPage() {
                 { label:"Exact speed", sub:"Points = seconds left", value:"15→1", color:"var(--accent2)" },
                 { label:"Example", sub:"Answer with 12s left", value:"+12", color:"var(--accent)" },
                 { label:"Minimum", sub:"Last-second answer", value:"+1", color:"var(--muted)" },
+                { label:"Streak bonus", sub:"3+ correct in a row", value:"+6+", color:"var(--accent2)" },
                 { label:"Streak bonus", sub:"3+ correct in a row", value:"+6+", color:"var(--accent2)" },
               ].map((row) => (
                 <div key={row.label} style={{ display:"flex",alignItems:"center",justifyContent:"space-between" }}>
