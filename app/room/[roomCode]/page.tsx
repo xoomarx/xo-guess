@@ -184,7 +184,7 @@ function getRandomPartyQuestion(
 
 function getGameLabel(gameType?: PartyGameType) {
   const labels: Record<PartyGameType, string> = {
-    "logo-flag": "{getGameLabel(room.gameType)}",
+    "logo-flag": "Logo & Flag Rush",
     emoji: "Emoji Guess",
     typing: "Typing Battle",
     "would-you-rather": "Would You Rather",
@@ -1100,6 +1100,11 @@ export default function RoomPage() {
           padding:18px 20px;
           border-radius:18px;
         }
+        .option-hint{
+          font-size:12px;
+          color:var(--muted);
+          margin-top:-8px;
+        }
         .option-grid{
           display:grid;
           grid-template-columns:repeat(2,minmax(0,1fr));
@@ -1405,14 +1410,16 @@ export default function RoomPage() {
           <div className="card">
             <div className="room-header">
               <div>
-                <div className="room-title">Logo & Flag Rush</div>
+                <div className="room-title">{getGameLabel(room.gameType)}</div>
                 <div className="room-code-badge">{roomCode}</div>
                 <div className="room-mode-badge">
-                  {room.gameMode === "flags"
-                    ? "🌍 Flags only"
-                    : room.gameMode === "logos"
-                    ? "🏷️ Logos only"
-                    : "🎲 Mixed game"}
+                  {room.gameType === "logo-flag"
+                    ? room.gameMode === "flags"
+                      ? "🌍 Flags only"
+                      : room.gameMode === "logos"
+                      ? "🏷️ Logos only"
+                      : "🎲 Mixed logos + flags"
+                    : getGameLabel(room.gameType)}
                 </div>
               </div>
               <div className="btn-row">
@@ -1610,6 +1617,8 @@ export default function RoomPage() {
                   </div>
 
                   {room.currentQuestion.options && (
+                    <>
+                    <div className="option-hint">Click an option, then press Enter / Submit</div>
                     <div className="option-grid">
                       {room.currentQuestion.options.map((option, index) => (
                         <button
@@ -1619,7 +1628,8 @@ export default function RoomPage() {
                           onClick={() => {
                             const letter = String.fromCharCode(65 + index);
                             setAnswer(letter);
-                            setTimeout(() => submitAnswer(), 0);
+                            setFeedback(null);
+                            setTimeout(() => answerInputRef.current?.focus(), 50);
                           }}
                           disabled={isReveal || timeLeft === 0 || !!alreadyAnswered}
                         >
@@ -1627,6 +1637,7 @@ export default function RoomPage() {
                         </button>
                       ))}
                     </div>
+                    </>
                   )}
                 </div>
               )}

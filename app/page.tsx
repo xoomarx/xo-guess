@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { ref, set, get } from "firebase/database";
 import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
-import { getRandomQuestionByMode } from "../lib/questions";
 import type { GameMode, Difficulty } from "../lib/questions";
 
 function createRoomCode() {
@@ -90,7 +89,6 @@ export default function Home() {
 
     const user = await getOrSignIn();
     const roomCode = createRoomCode();
-    const first = getRandomQuestionByMode([], gameMode, difficulty);
 
     await set(ref(db, `rooms/${roomCode}`), {
       hostId: user.uid,
@@ -524,20 +522,37 @@ export default function Home() {
           </div>
 
           <h1 className="title">
-            Logo<br />
-            <span className="title-accent">& Flag</span><br />
-            Rush
+            Rush<br />
+            <span className="title-accent">Party</span><br />
+            Games
           </h1>
 
           <p className="subtitle">
-            Guess logos and flags faster than anyone. Speed wins points.
+            Pick a game, invite friends, and race for the leaderboard.
           </p>
 
           {/* ── Game Mode Selector (only for Create) ── */}
           {tab === "create" && (
             <div className="mode-section">
-              <span className="mode-label">Game Mode</span>
-              <div className="mode-grid">
+              <span className="mode-label">Choose Game</span>
+              <div className="game-picker-grid">
+                {PARTY_GAMES.map((game) => (
+                  <button
+                    key={game.value}
+                    type="button"
+                    className={`game-card ${gameType === game.value ? "selected" : ""}`}
+                    onClick={() => setGameType(game.value)}
+                  >
+                    <span className="game-emoji">{game.emoji}</span>
+                    <span className="game-name">{game.label}</span>
+                    <span className="game-desc">{game.desc}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className={`logo-mode-wrap ${gameType !== "logo-flag" ? "hidden" : ""}`}>
+                <span className="mode-label">Logo/Flag Mode</span>
+                <div className="mode-grid">
                 {MODES.map((m) => (
                   <button
                     key={m.value}
@@ -549,6 +564,7 @@ export default function Home() {
                     <span className="mode-desc">{m.desc}</span>
                   </button>
                 ))}
+                </div>
               </div>
 
               <div className="settings-grid">
