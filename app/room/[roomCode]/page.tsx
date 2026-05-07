@@ -60,12 +60,22 @@ type Room = {
 type SoundName = "correct" | "wrong" | "timer" | "gameover";
 
 
-const AVATARS = ["🦊", "🐼", "🐸", "🐵", "🐯", "🐺", "🦁", "🐨", "🐙", "🦄", "🐲", "🦅"];
+const FUNNY_AVATARS = [
+  { id: "bot-1", label: "Pixel Bot", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=PixelBot&backgroundColor=b6e3f4,c0aede,d1d4f9" },
+  { id: "bot-2", label: "Toast Bot", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=ToastBot&backgroundColor=ffd5dc,ffdfbf,c0aede" },
+  { id: "bot-3", label: "Alien Bot", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=AlienBot&backgroundColor=c0aede,b6e3f4,d1d4f9" },
+  { id: "fun-1", label: "Banana Dude", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=BananaDude&backgroundColor=fff1ba,ffd5dc,b6e3f4" },
+  { id: "fun-2", label: "Wacky Cat", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=WackyCat&backgroundColor=d1d4f9,c0aede,ffdfbf" },
+  { id: "fun-3", label: "Chaos Frog", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=ChaosFrog&backgroundColor=b6e3f4,fff1ba,c0aede" },
+  { id: "adv-1", label: "Captain Meme", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=CaptainMeme&backgroundColor=b6e3f4,d1d4f9,ffd5dc" },
+  { id: "adv-2", label: "Sir Goof", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SirGoof&backgroundColor=ffdfbf,c0aede,b6e3f4" },
+];
+
 const PLAYER_COLORS = ["#38d9ff", "#a78bfa", "#facc15", "#4af0a0", "#fb7185", "#f472b6", "#60a5fa"];
 
 function pickAvatar(seed: string) {
   const total = seed.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  return AVATARS[total % AVATARS.length];
+  return FUNNY_AVATARS[total % FUNNY_AVATARS.length].url;
 }
 
 function pickPlayerColor(seed: string) {
@@ -112,6 +122,7 @@ export default function RoomPage() {
   const [volume, setVolume] = useState(0.75);
   const [musicEnabled, setMusicEnabled] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState(FUNNY_AVATARS[0].url);
   const soundUnlockedRef = useRef(false);
   const [lastPhase, setLastPhase] = useState<string | null>(null);
   const [gameEnded, setGameEnded] = useState(false);
@@ -168,7 +179,9 @@ export default function RoomPage() {
 
   useEffect(() => {
     const savedName = localStorage.getItem("name");
+    const savedAvatar = localStorage.getItem("avatar");
     if (savedName) setName(savedName);
+    if (savedAvatar) setSelectedAvatar(savedAvatar);
     setCurrentUrl(window.location.href);
   }, []);
 
@@ -325,15 +338,21 @@ export default function RoomPage() {
     }
   }, [room?.status, room?.phase, timeLeft]);
 
+  function chooseAvatar(avatarUrl: string) {
+    setSelectedAvatar(avatarUrl);
+    localStorage.setItem("avatar", avatarUrl);
+  }
+
   async function joinRoom() {
     if (!uid) return;
     const playerName = name.trim();
     if (!playerName) return;
     localStorage.setItem("name", playerName);
+    localStorage.setItem("avatar", selectedAvatar);
     await update(ref(db, `rooms/${roomCode}/players/${uid}`), {
       name: playerName,
       score: room?.players?.[uid]?.score || 0,
-      avatar: room?.players?.[uid]?.avatar || pickAvatar(playerName),
+      avatar: selectedAvatar || room?.players?.[uid]?.avatar || pickAvatar(playerName),
       color: room?.players?.[uid]?.color || pickPlayerColor(playerName),
       streak: room?.players?.[uid]?.streak || 0,
       bestStreak: room?.players?.[uid]?.bestStreak || 0,
@@ -1005,7 +1024,43 @@ export default function RoomPage() {
         .typing-pill{
           color:var(--accent);font-size:10px;font-weight:800;margin-left:6px;
         }
-        .avatar-badge{
+        
+        .avatar-picker-grid{
+          display:grid;
+          grid-template-columns:repeat(4,1fr);
+          gap:10px;
+          margin:14px 0 4px;
+        }
+        .avatar-card{
+          border:1px solid rgba(255,255,255,0.12);
+          background:rgba(255,255,255,0.04);
+          border-radius:16px;
+          padding:6px;
+          cursor:pointer;
+          transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+        }
+        .avatar-card:hover{transform:translateY(-2px);border-color:rgba(56,217,255,0.45)}
+        .avatar-card.selected{
+          border-color:rgba(56,217,255,0.9);
+          background:rgba(56,217,255,0.08);
+          box-shadow:0 0 0 2px rgba(56,217,255,0.16),0 10px 24px rgba(56,217,255,0.14);
+        }
+        .avatar-card img{
+          width:100%;
+          aspect-ratio:1/1;
+          object-fit:cover;
+          display:block;
+          border-radius:12px;
+          background:rgba(255,255,255,0.06);
+        }
+        .avatar-badge img{
+          width:100%;
+          height:100%;
+          object-fit:cover;
+          border-radius:999px;
+          display:block;
+        }
+.avatar-badge{
           display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;
           margin-right:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
         }
@@ -1118,6 +1173,20 @@ export default function RoomPage() {
                 onKeyDown={(e) => e.key === "Enter" && joinRoom()}
                 maxLength={20}
               />
+
+              <div className="avatar-picker-grid">
+                {FUNNY_AVATARS.map((avatar) => (
+                  <button
+                    key={avatar.id}
+                    type="button"
+                    className={`avatar-card ${selectedAvatar === avatar.url ? "selected" : ""}`}
+                    onClick={() => chooseAvatar(avatar.url)}
+                    title={avatar.label}
+                  >
+                    <img src={avatar.url} alt={avatar.label} />
+                  </button>
+                ))}
+              </div>
 
               <div className="btn-row">
                 <button className="btn btn-primary" onClick={joinRoom} disabled={!name.trim()}>
@@ -1391,7 +1460,7 @@ export default function RoomPage() {
                   <span className="player-rank-num">#{index + 1}</span>
                 )}
                 <span className="avatar-badge" style={{ borderColor: player.color || "rgba(255,255,255,0.12)" }}>
-                  {player.avatar || "🎮"}
+                  <img src={player.avatar || pickAvatar(player.name)} alt={player.name} />
                 </span>
                 <span className="player-name">
                   {player.name}
