@@ -85,18 +85,52 @@ const PARTY_QUESTIONS: Record<Exclude<PartyGameType, "logo-flag">, Question[]> =
     { type: "emoji", prompt: "🦁👑", answer: "The Lion King", acceptedAnswers: ["The Lion King", "lion king"] },
     { type: "emoji", prompt: "🍔👑", answer: "Burger King", acceptedAnswers: ["Burger King"] },
     { type: "emoji", prompt: "🧊❄️👸", answer: "Frozen", acceptedAnswers: ["Frozen"] },
-    { type: "emoji", prompt: "🕷️👨", answer: "Spider-Man", acceptedAnswers: ["Spider-Man", "Spiderman", "Spider Man"] },
+    { type: "emoji", prompt: "🕷️👨", answer: "Spider-Man", acceptedAnswers: ["Spider-Man", "spiderman", "spider man"] },
     { type: "emoji", prompt: "⚡👦🪄", answer: "Harry Potter", acceptedAnswers: ["Harry Potter"] },
     { type: "emoji", prompt: "🚗⚡🏁", answer: "Cars", acceptedAnswers: ["Cars"] },
-    { type: "emoji", prompt: "🍕🐢🥷", answer: "Teenage Mutant Ninja Turtles", acceptedAnswers: ["Teenage Mutant Ninja Turtles", "TMNT", "Ninja Turtles"] },
-    { type: "emoji", prompt: "🧽⭐🦑", answer: "SpongeBob", acceptedAnswers: ["SpongeBob", "Spongebob Squarepants", "SpongeBob SquarePants"] },
+    { type: "emoji", prompt: "🍕🐢🥷", answer: "Teenage Mutant Ninja Turtles", acceptedAnswers: ["Teenage Mutant Ninja Turtles", "tmnt", "ninja turtles"] },
+    { type: "emoji", prompt: "🧽⭐🦑", answer: "SpongeBob", acceptedAnswers: ["SpongeBob", "spongebob squarepants"] },
     { type: "emoji", prompt: "🎮⛏️🟩", answer: "Minecraft", acceptedAnswers: ["Minecraft"] },
     { type: "emoji", prompt: "🐭🏰✨", answer: "Disney", acceptedAnswers: ["Disney"] },
-    { type: "emoji", prompt: "🔴▶️", answer: "YouTube", acceptedAnswers: ["YouTube", "Youtube"] },
-    { type: "emoji", prompt: "📸🌈", answer: "Instagram", acceptedAnswers: ["Instagram", "Insta"] },
-    { type: "emoji", prompt: "🎵⬛", answer: "TikTok", acceptedAnswers: ["TikTok", "Tiktok"] },
-    { type: "emoji", prompt: "👻💛", answer: "Snapchat", acceptedAnswers: ["Snapchat", "Snap"] },
+    { type: "emoji", prompt: "🔴▶️", answer: "YouTube", acceptedAnswers: ["YouTube", "youtube"] },
+    { type: "emoji", prompt: "📸🌈", answer: "Instagram", acceptedAnswers: ["Instagram", "insta"] },
+    { type: "emoji", prompt: "🎵⬛", answer: "TikTok", acceptedAnswers: ["TikTok", "tiktok"] },
+    { type: "emoji", prompt: "👻💛", answer: "Snapchat", acceptedAnswers: ["Snapchat", "snap"] },
     { type: "emoji", prompt: "☕⭐", answer: "Starbucks", acceptedAnswers: ["Starbucks"] },
+    { type: "emoji", prompt: "🍎📱", answer: "Apple", acceptedAnswers: ["Apple"] },
+    { type: "emoji", prompt: "🟦🪟", answer: "Microsoft", acceptedAnswers: ["Microsoft"] },
+    { type: "emoji", prompt: "🛒📦", answer: "Amazon", acceptedAnswers: ["Amazon"] },
+    { type: "emoji", prompt: "🎧🟢", answer: "Spotify", acceptedAnswers: ["Spotify"] },
+    { type: "emoji", prompt: "🎬🍿🌙", answer: "Netflix", acceptedAnswers: ["Netflix"] },
+    { type: "emoji", prompt: "🟩🤖", answer: "Android", acceptedAnswers: ["Android"] },
+    { type: "emoji", prompt: "🚘⚡", answer: "Tesla", acceptedAnswers: ["Tesla"] },
+    { type: "emoji", prompt: "✅👟", answer: "Nike", acceptedAnswers: ["Nike"] },
+    { type: "emoji", prompt: "🍟🤡", answer: "McDonald's", acceptedAnswers: ["McDonald's", "mcdonalds", "mcdonald's"] },
+    { type: "emoji", prompt: "🥤🔴", answer: "Coca-Cola", acceptedAnswers: ["Coca-Cola", "coke", "cocacola"] },
+    { type: "emoji", prompt: "🥤🔵", answer: "Pepsi", acceptedAnswers: ["Pepsi"] },
+    { type: "emoji", prompt: "👽📞🏠", answer: "E.T.", acceptedAnswers: ["E.T.", "et", "e t"] },
+    { type: "emoji", prompt: "🦇👨", answer: "Batman", acceptedAnswers: ["Batman"] },
+    { type: "emoji", prompt: "🦸‍♂️🛡️🇺🇸", answer: "Captain America", acceptedAnswers: ["Captain America"] },
+    { type: "emoji", prompt: "🤖🥊", answer: "Real Steel", acceptedAnswers: ["Real Steel"] },
+    { type: "emoji", prompt: "🦖🏝️", answer: "Jurassic Park", acceptedAnswers: ["Jurassic Park"] },
+    { type: "emoji", prompt: "🚢🧊💔", answer: "Titanic", acceptedAnswers: ["Titanic"] },
+    { type: "emoji", prompt: "👟💨🦔", answer: "Sonic", acceptedAnswers: ["Sonic", "sonic the hedgehog"] },
+    { type: "emoji", prompt: "🍄👨🔴", answer: "Mario", acceptedAnswers: ["Mario", "super mario"] },
+    { type: "emoji", prompt: "🟡⚡🐭", answer: "Pikachu", acceptedAnswers: ["Pikachu", "pokemon"] },
+    { type: "emoji", prompt: "🔫🟧⬛", answer: "Fortnite", acceptedAnswers: ["Fortnite"] },
+    { type: "emoji", prompt: "🧱🎮", answer: "Roblox", acceptedAnswers: ["Roblox"] },
+    { type: "emoji", prompt: "🧙‍♂️💍", answer: "Lord of the Rings", acceptedAnswers: ["Lord of the Rings", "lotr"] },
+    { type: "emoji", prompt: "🧟‍♂️🚪", answer: "The Walking Dead", acceptedAnswers: ["The Walking Dead"] },
+    { type: "emoji", prompt: "🏀👑", answer: "LeBron James", acceptedAnswers: ["LeBron James", "lebron"] },
+    { type: "emoji", prompt: "🐐⚽", answer: "Messi", acceptedAnswers: ["Messi", "lionel messi"] },
+    { type: "emoji", prompt: "🇵🇹⚽🐐", answer: "Ronaldo", acceptedAnswers: ["Ronaldo", "cristiano ronaldo"] },
+    { type: "emoji", prompt: "🧠🎮🔵", answer: "PlayStation", acceptedAnswers: ["PlayStation", "ps", "ps5"] },
+    { type: "emoji", prompt: "❎🎮", answer: "Xbox", acceptedAnswers: ["Xbox"] },
+    { type: "emoji", prompt: "🔴🎮🍄", answer: "Nintendo", acceptedAnswers: ["Nintendo"] },
+    { type: "emoji", prompt: "💬🎮", answer: "Discord", acceptedAnswers: ["Discord"] },
+    { type: "emoji", prompt: "👽🧡", answer: "Reddit", acceptedAnswers: ["Reddit"] },
+    { type: "emoji", prompt: "💳🔵", answer: "Visa", acceptedAnswers: ["Visa"] },
+    { type: "emoji", prompt: "💳🔴🟡", answer: "Mastercard", acceptedAnswers: ["Mastercard"] },
   ],
   typing: [
     { type: "typing", prompt: "the goofy shark stole my points", answer: "the goofy shark stole my points", acceptedAnswers: ["the goofy shark stole my points"] },
@@ -109,37 +143,131 @@ const PARTY_QUESTIONS: Record<Exclude<PartyGameType, "logo-flag">, Question[]> =
     { type: "typing", prompt: "the timer is bullying me", answer: "the timer is bullying me", acceptedAnswers: ["the timer is bullying me"] },
     { type: "typing", prompt: "one more round then sleep", answer: "one more round then sleep", acceptedAnswers: ["one more round then sleep"] },
     { type: "typing", prompt: "my keyboard has aura", answer: "my keyboard has aura", acceptedAnswers: ["my keyboard has aura"] },
+    { type: "typing", prompt: "skibidi CEO joined the room", answer: "skibidi CEO joined the room", acceptedAnswers: ["skibidi CEO joined the room"] },
+    { type: "typing", prompt: "this lobby has zero chill", answer: "this lobby has zero chill", acceptedAnswers: ["this lobby has zero chill"] },
+    { type: "typing", prompt: "stop stealing my answer bro", answer: "stop stealing my answer bro", acceptedAnswers: ["stop stealing my answer bro"] },
+    { type: "typing", prompt: "the banana has executive power", answer: "the banana has executive power", acceptedAnswers: ["the banana has executive power"] },
+    { type: "typing", prompt: "my reaction time is cooked", answer: "my reaction time is cooked", acceptedAnswers: ["my reaction time is cooked"] },
+    { type: "typing", prompt: "grandma types faster than me", answer: "grandma types faster than me", acceptedAnswers: ["grandma types faster than me"] },
+    { type: "typing", prompt: "do not let the pigeon win", answer: "do not let the pigeon win", acceptedAnswers: ["do not let the pigeon win"] },
+    { type: "typing", prompt: "frog wizard used autocomplete", answer: "frog wizard used autocomplete", acceptedAnswers: ["frog wizard used autocomplete"] },
+    { type: "typing", prompt: "the leaderboard is personal now", answer: "the leaderboard is personal now", acceptedAnswers: ["the leaderboard is personal now"] },
+    { type: "typing", prompt: "i swear i typed that first", answer: "i swear i typed that first", acceptedAnswers: ["i swear i typed that first"] },
+    { type: "typing", prompt: "the submit button fears me", answer: "the submit button fears me", acceptedAnswers: ["the submit button fears me"] },
+    { type: "typing", prompt: "brainrot but make it competitive", answer: "brainrot but make it competitive", acceptedAnswers: ["brainrot but make it competitive"] },
+    { type: "typing", prompt: "never pause during overtime", answer: "never pause during overtime", acceptedAnswers: ["never pause during overtime"] },
+    { type: "typing", prompt: "my fingers are in turbo mode", answer: "my fingers are in turbo mode", acceptedAnswers: ["my fingers are in turbo mode"] },
+    { type: "typing", prompt: "the shark is wearing sunglasses", answer: "the shark is wearing sunglasses", acceptedAnswers: ["the shark is wearing sunglasses"] },
+    { type: "typing", prompt: "this sentence is longer than needed", answer: "this sentence is longer than needed", acceptedAnswers: ["this sentence is longer than needed"] },
+    { type: "typing", prompt: "keyboard goblin has entered chat", answer: "keyboard goblin has entered chat", acceptedAnswers: ["keyboard goblin has entered chat"] },
+    { type: "typing", prompt: "rush party is actually fire", answer: "rush party is actually fire", acceptedAnswers: ["rush party is actually fire"] },
+    { type: "typing", prompt: "i blinked and lost twelve points", answer: "i blinked and lost twelve points", acceptedAnswers: ["i blinked and lost twelve points"] },
+    { type: "typing", prompt: "the room code is top secret", answer: "the room code is top secret", acceptedAnswers: ["the room code is top secret"] },
+    { type: "typing", prompt: "no mouse only keyboard energy", answer: "no mouse only keyboard energy", acceptedAnswers: ["no mouse only keyboard energy"] },
+    { type: "typing", prompt: "final boss baby is watching", answer: "final boss baby is watching", acceptedAnswers: ["final boss baby is watching"] },
+    { type: "typing", prompt: "typing battle exposed everyone", answer: "typing battle exposed everyone", acceptedAnswers: ["typing battle exposed everyone"] },
+    { type: "typing", prompt: "my spacebar needs a vacation", answer: "my spacebar needs a vacation", acceptedAnswers: ["my spacebar needs a vacation"] },
   ],
   "would-you-rather": [
-    { type: "would-you-rather", prompt: "Would you rather lose Wi‑Fi for a week or lose snacks for a week?", options: ["A) Lose Wi‑Fi", "B) Lose snacks"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "lose wifi", "lose wi-fi", "lose snacks"] },
-    { type: "would-you-rather", prompt: "Would you rather only use YouTube or only use TikTok?", options: ["A) YouTube only", "B) TikTok only"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "youtube", "tiktok", "youtube only", "tiktok only"] },
-    { type: "would-you-rather", prompt: "Would you rather be super fast or super smart?", options: ["A) Super fast", "B) Super smart"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "fast", "smart", "super fast", "super smart"] },
-    { type: "would-you-rather", prompt: "Would you rather always win games or always win arguments?", options: ["A) Games", "B) Arguments"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "games", "arguments"] },
-    { type: "would-you-rather", prompt: "Would you rather have unlimited pizza or unlimited burgers?", options: ["A) Pizza", "B) Burgers"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "pizza", "burgers", "burger"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Unlimited Wi‑Fi", "B) Unlimited snacks"], answer: "A", acceptedAnswers: ["A", "a", "Unlimited Wi‑Fi"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) YouTube only", "B) TikTok only"], answer: "A", acceptedAnswers: ["A", "a", "YouTube only"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Super speed", "B) Super intelligence"], answer: "B", acceptedAnswers: ["B", "b", "Super intelligence"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Always win games", "B) Always win arguments"], answer: "A", acceptedAnswers: ["A", "a", "Always win games"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Pizza forever", "B) Burgers forever"], answer: "A", acceptedAnswers: ["A", "a", "Pizza forever"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Never sleep tired", "B) Never feel hungry"], answer: "A", acceptedAnswers: ["A", "a", "Never sleep tired"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Free travel", "B) Free food"], answer: "A", acceptedAnswers: ["A", "a", "Free travel"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Be famous", "B) Be rich but unknown"], answer: "B", acceptedAnswers: ["B", "b", "Be rich but unknown"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Read minds", "B) Teleport"], answer: "B", acceptedAnswers: ["B", "b", "Teleport"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Perfect aim", "B) Perfect luck"], answer: "B", acceptedAnswers: ["B", "b", "Perfect luck"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) No school/work for a month", "B) New phone"], answer: "A", acceptedAnswers: ["A", "a", "No school/work for a month"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Live in a game", "B) Live in a movie"], answer: "A", acceptedAnswers: ["A", "a", "Live in a game"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Talk to animals", "B) Speak every language"], answer: "B", acceptedAnswers: ["B", "b", "Speak every language"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Never lose battery", "B) Never lose internet"], answer: "B", acceptedAnswers: ["B", "b", "Never lose internet"] },
+    { type: "would-you-rather", prompt: "Prediction mode: what would MOST players choose?", options: ["A) Be invisible", "B) Fly"], answer: "B", acceptedAnswers: ["B", "b", "Fly"] },
   ],
   trivia: [
-    { type: "trivia", prompt: "What country has the city Paris?", answer: "France", acceptedAnswers: ["France"] },
+    { type: "trivia", prompt: "What country has the city Paris?", answer: "France", acceptedAnswers: ["France", "france"] },
     { type: "trivia", prompt: "How many players are on the field for one football/soccer team?", answer: "11", acceptedAnswers: ["11", "eleven"] },
     { type: "trivia", prompt: "What planet is known as the Red Planet?", answer: "Mars", acceptedAnswers: ["Mars"] },
     { type: "trivia", prompt: "What is the fastest land animal?", answer: "Cheetah", acceptedAnswers: ["Cheetah"] },
-    { type: "trivia", prompt: "What does NBA stand for?", answer: "National Basketball Association", acceptedAnswers: ["National Basketball Association", "NBA"] },
-    { type: "trivia", prompt: "What language is mainly used with React?", answer: "JavaScript", acceptedAnswers: ["JavaScript", "Javascript", "JS", "TypeScript", "Typescript", "TS"] },
+    { type: "trivia", prompt: "What does NBA stand for?", answer: "National Basketball Association", acceptedAnswers: ["National Basketball Association", "nba"] },
     { type: "trivia", prompt: "Which company makes the iPhone?", answer: "Apple", acceptedAnswers: ["Apple"] },
     { type: "trivia", prompt: "What is 9 × 9?", answer: "81", acceptedAnswers: ["81", "eighty one", "eighty-one"] },
+    { type: "trivia", prompt: "Which ocean is the largest?", answer: "Pacific Ocean", acceptedAnswers: ["Pacific Ocean", "pacific"] },
+    { type: "trivia", prompt: "What gas do plants absorb?", answer: "Carbon dioxide", acceptedAnswers: ["Carbon dioxide", "co2", "carbon dioxide"] },
+    { type: "trivia", prompt: "What is the capital of Japan?", answer: "Tokyo", acceptedAnswers: ["Tokyo"] },
+    { type: "trivia", prompt: "Which country is known for the pyramids of Giza?", answer: "Egypt", acceptedAnswers: ["Egypt"] },
+    { type: "trivia", prompt: "What is the hardest natural substance?", answer: "Diamond", acceptedAnswers: ["Diamond"] },
+    { type: "trivia", prompt: "How many continents are there?", answer: "7", acceptedAnswers: ["7", "seven"] },
+    { type: "trivia", prompt: "What sport uses a puck?", answer: "Hockey", acceptedAnswers: ["Hockey", "ice hockey"] },
+    { type: "trivia", prompt: "Who painted the Mona Lisa?", answer: "Leonardo da Vinci", acceptedAnswers: ["Leonardo da Vinci", "da vinci", "leonardo"] },
+    { type: "trivia", prompt: "What is the square root of 64?", answer: "8", acceptedAnswers: ["8", "eight"] },
+    { type: "trivia", prompt: "Which animal is known as the king of the jungle?", answer: "Lion", acceptedAnswers: ["Lion"] },
+    { type: "trivia", prompt: "Which app uses short vertical videos and a music-note logo?", answer: "TikTok", acceptedAnswers: ["TikTok", "tiktok"] },
+    { type: "trivia", prompt: "What does CPU stand for?", answer: "Central Processing Unit", acceptedAnswers: ["Central Processing Unit", "cpu"] },
+    { type: "trivia", prompt: "What is H2O?", answer: "Water", acceptedAnswers: ["Water"] },
+    { type: "trivia", prompt: "Which country invented pizza as we know it?", answer: "Italy", acceptedAnswers: ["Italy"] },
+    { type: "trivia", prompt: "What is the capital of Canada?", answer: "Ottawa", acceptedAnswers: ["Ottawa"] },
+    { type: "trivia", prompt: "How many sides does a hexagon have?", answer: "6", acceptedAnswers: ["6", "six"] },
+    { type: "trivia", prompt: "Which planet has rings most famously?", answer: "Saturn", acceptedAnswers: ["Saturn"] },
+    { type: "trivia", prompt: "Which company owns YouTube?", answer: "Google", acceptedAnswers: ["Google", "alphabet"] },
+    { type: "trivia", prompt: "What color do you get by mixing red and blue?", answer: "Purple", acceptedAnswers: ["Purple"] },
+    { type: "trivia", prompt: "What is the biggest mammal?", answer: "Blue whale", acceptedAnswers: ["Blue whale", "blue whale"] },
+    { type: "trivia", prompt: "What is the main language of Brazil?", answer: "Portuguese", acceptedAnswers: ["Portuguese"] },
+    { type: "trivia", prompt: "Which superhero is also called the Dark Knight?", answer: "Batman", acceptedAnswers: ["Batman"] },
+    { type: "trivia", prompt: "What game has creepers and blocks?", answer: "Minecraft", acceptedAnswers: ["Minecraft"] },
+    { type: "trivia", prompt: "What is the chemical symbol for gold?", answer: "Au", acceptedAnswers: ["Au", "au"] },
+    { type: "trivia", prompt: "What is the capital of Lebanon?", answer: "Beirut", acceptedAnswers: ["Beirut"] },
+    { type: "trivia", prompt: "In chess, which piece moves in an L shape?", answer: "Knight", acceptedAnswers: ["Knight"] },
+    { type: "trivia", prompt: "How many minutes are in an hour?", answer: "60", acceptedAnswers: ["60", "sixty"] },
   ],
   "odd-one-out": [
-    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Apple", "Samsung", "Nike", "Google"], answer: "Nike", acceptedAnswers: ["Nike", "c", "3"] },
-    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["France", "Germany", "Brazil", "Netflix"], answer: "Netflix", acceptedAnswers: ["Netflix", "d", "4"] },
-    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["YouTube", "TikTok", "Instagram", "Toyota"], answer: "Toyota", acceptedAnswers: ["Toyota", "d", "4"] },
-    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Pizza", "Burger", "Sushi", "PlayStation"], answer: "PlayStation", acceptedAnswers: ["PlayStation", "Playstation", "d", "4"] },
-    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Lion", "Tiger", "Shark", "Adidas"], answer: "Adidas", acceptedAnswers: ["Adidas", "d", "4"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Apple", "Samsung", "Nike", "Google"], answer: "Nike", acceptedAnswers: ["Nike"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["France", "Germany", "Brazil", "Netflix"], answer: "Netflix", acceptedAnswers: ["Netflix"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["YouTube", "TikTok", "Instagram", "Toyota"], answer: "Toyota", acceptedAnswers: ["Toyota"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Pizza", "Burger", "Sushi", "PlayStation"], answer: "PlayStation", acceptedAnswers: ["PlayStation"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Lion", "Tiger", "Shark", "Adidas"], answer: "Adidas", acceptedAnswers: ["Adidas"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["BMW", "Mercedes", "Audi", "Spotify"], answer: "Spotify", acceptedAnswers: ["Spotify"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Netflix", "Disney+", "Prime Video", "McDonald's"], answer: "McDonald's", acceptedAnswers: ["McDonald's"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["React", "Vue", "Angular", "Pepsi"], answer: "Pepsi", acceptedAnswers: ["Pepsi"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Visa", "Mastercard", "PayPal", "Minecraft"], answer: "Minecraft", acceptedAnswers: ["Minecraft"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Egypt", "Morocco", "Kenya", "Nintendo"], answer: "Nintendo", acceptedAnswers: ["Nintendo"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Mars", "Venus", "Jupiter", "KFC"], answer: "KFC", acceptedAnswers: ["KFC"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Python", "JavaScript", "TypeScript", "Starbucks"], answer: "Starbucks", acceptedAnswers: ["Starbucks"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Shark", "Whale", "Dolphin", "Ferrari"], answer: "Ferrari", acceptedAnswers: ["Ferrari"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["TikTok", "Snapchat", "Discord", "Toyota"], answer: "Toyota", acceptedAnswers: ["Toyota"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Lebanon", "Qatar", "Jordan", "Xbox"], answer: "Xbox", acceptedAnswers: ["Xbox"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Nike", "Adidas", "Puma", "Google"], answer: "Google", acceptedAnswers: ["Google"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Sushi", "Ramen", "Tacos", "PlayStation"], answer: "PlayStation", acceptedAnswers: ["PlayStation"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Facebook", "Instagram", "WhatsApp", "Honda"], answer: "Honda", acceptedAnswers: ["Honda"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Argentina", "Brazil", "Chile", "Amazon"], answer: "Amazon", acceptedAnswers: ["Amazon"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Tiger", "Leopard", "Cheetah", "Visa"], answer: "Visa", acceptedAnswers: ["Visa"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Chrome", "Safari", "Firefox", "Burger King"], answer: "Burger King", acceptedAnswers: ["Burger King"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Football", "Basketball", "Tennis", "Netflix"], answer: "Netflix", acceptedAnswers: ["Netflix"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Canada", "Mexico", "United States", "Spotify"], answer: "Spotify", acceptedAnswers: ["Spotify"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Airbnb", "Uber", "Uber Eats", "Coca-Cola"], answer: "Coca-Cola", acceptedAnswers: ["Coca-Cola"] },
   ],
   "this-or-that": [
-    { type: "this-or-that", prompt: "Pick one fast.", options: ["A) Messi", "B) Ronaldo"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "messi", "ronaldo"] },
-    { type: "this-or-that", prompt: "Pick one fast.", options: ["A) Nike", "B) Adidas"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "nike", "adidas"] },
-    { type: "this-or-that", prompt: "Pick one fast.", options: ["A) iPhone", "B) Samsung"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "iphone", "samsung"] },
-    { type: "this-or-that", prompt: "Pick one fast.", options: ["A) Pizza", "B) Burger"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "pizza", "burger"] },
-    { type: "this-or-that", prompt: "Pick one fast.", options: ["A) Summer", "B) Winter"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "summer", "winter"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Messi", "B) Ronaldo"], answer: "A", acceptedAnswers: ["A", "a", "Messi"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Nike", "B) Adidas"], answer: "A", acceptedAnswers: ["A", "a", "Nike"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) iPhone", "B) Samsung"], answer: "A", acceptedAnswers: ["A", "a", "iPhone"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Pizza", "B) Burger"], answer: "A", acceptedAnswers: ["A", "a", "Pizza"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Summer", "B) Winter"], answer: "A", acceptedAnswers: ["A", "a", "Summer"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) PlayStation", "B) Xbox"], answer: "A", acceptedAnswers: ["A", "a", "PlayStation"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) YouTube", "B) Netflix"], answer: "A", acceptedAnswers: ["A", "a", "YouTube"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Cats", "B) Dogs"], answer: "B", acceptedAnswers: ["B", "b", "Dogs"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Coffee", "B) Tea"], answer: "A", acceptedAnswers: ["A", "a", "Coffee"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Marvel", "B) DC"], answer: "A", acceptedAnswers: ["A", "a", "Marvel"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Minecraft", "B) Roblox"], answer: "B", acceptedAnswers: ["B", "b", "Roblox"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) KFC", "B) McDonald's"], answer: "B", acceptedAnswers: ["B", "b", "McDonald's"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Spotify", "B) Apple Music"], answer: "A", acceptedAnswers: ["A", "a", "Spotify"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Instagram", "B) Snapchat"], answer: "A", acceptedAnswers: ["A", "a", "Instagram"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Football", "B) Basketball"], answer: "A", acceptedAnswers: ["A", "a", "Football"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Chrome", "B) Safari"], answer: "A", acceptedAnswers: ["A", "a", "Chrome"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Uber", "B) Taxi"], answer: "A", acceptedAnswers: ["A", "a", "Uber"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Coke", "B) Pepsi"], answer: "A", acceptedAnswers: ["A", "a", "Coke"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Mario", "B) Sonic"], answer: "A", acceptedAnswers: ["A", "a", "Mario"] },
+    { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Beach", "B) Mountains"], answer: "A", acceptedAnswers: ["A", "a", "Beach"] },
   ],
 };
 
@@ -161,6 +289,56 @@ function isPartyCorrectAnswer(userAnswer: string, question: Question) {
   return question.acceptedAnswers.some((accepted) => normalizePartyAnswer(accepted) === normalized);
 }
 
+
+function shuffleQuestionOptions(question: Question): Question {
+  if (!question.options || question.options.length === 0) return question;
+
+  const options = [...question.options];
+
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+
+  const answerText = question.answer;
+  const answerIndex = options.findIndex((option) => {
+    const cleanOption = normalizePartyAnswer(option.replace(/^[A-D]\)\s*/, ""));
+    const cleanAnswer = normalizePartyAnswer(answerText);
+    return cleanOption === cleanAnswer || normalizePartyAnswer(option) === cleanAnswer;
+  });
+
+  if (question.type === "odd-one-out" && answerIndex >= 0) {
+    const answerLetter = String.fromCharCode(65 + answerIndex);
+    return {
+      ...question,
+      options,
+      acceptedAnswers: [question.answer, answerLetter, String(answerIndex + 1)],
+    };
+  }
+
+  if (question.type === "would-you-rather" || question.type === "this-or-that") {
+    // These are now prediction games. Preserve the correct choice even after shuffling.
+    const oldLetter = normalizePartyAnswer(question.answer).toUpperCase();
+    const oldIndex = oldLetter === "B" ? 1 : 0;
+    const originalCorrectOption = question.options[oldIndex];
+    const newIndex = options.indexOf(originalCorrectOption);
+    const newLetter = String.fromCharCode(65 + Math.max(0, newIndex));
+    const cleanText = originalCorrectOption.replace(/^[A-D]\)\s*/, "");
+
+    return {
+      ...question,
+      options,
+      answer: newLetter,
+      acceptedAnswers: [newLetter, String(newIndex + 1), cleanText],
+    };
+  }
+
+  return {
+    ...question,
+    options,
+  };
+}
+
 function getRandomPartyQuestion(
   usedIndexes: number[] = [],
   room?: Room | null
@@ -178,7 +356,7 @@ function getRandomPartyQuestion(
 
   return {
     index: pickedIndex,
-    question: pool[pickedIndex],
+    question: shuffleQuestionOptions(pool[pickedIndex]),
   };
 }
 
@@ -187,10 +365,10 @@ function getGameLabel(gameType?: PartyGameType) {
     "logo-flag": "Logo & Flag Rush",
     emoji: "Emoji Guess",
     typing: "Typing Battle",
-    "would-you-rather": "Would You Rather",
+    "would-you-rather": "Majority Guess",
     trivia: "Trivia Rush",
     "odd-one-out": "Odd One Out",
-    "this-or-that": "This or That",
+    "this-or-that": "Prediction Pick",
   };
 
   return labels[gameType || "logo-flag"];
@@ -636,6 +814,36 @@ export default function RoomPage() {
 
 
 
+
+  async function changeGameAndStart(nextGameType: PartyGameType) {
+    if (!isHost) return;
+
+    const mockRoom = {
+      ...room,
+      gameType: nextGameType,
+      usedQuestionIndexes: [],
+    } as Room;
+
+    const random = getRandomPartyQuestion([], mockRoom);
+
+    await update(ref(db, `rooms/${roomCode}`), {
+      status: "playing",
+      gameType: nextGameType,
+      questionIndex: random.index,
+      roundNumber: 1,
+      usedQuestionIndexes: [random.index],
+      currentQuestion: random.question,
+      roundStartedAt: serverTimestamp(),
+      roundAnswers: {},
+      phase: "question",
+      revealStartedAt: null,
+    });
+
+    setAnswer("");
+    setFeedback(null);
+    lastTimerSoundSecondRef.current = null;
+  }
+
   async function sendReaction(emoji: string) {
     if (!uid) return;
 
@@ -1053,6 +1261,36 @@ export default function RoomPage() {
         }
 
         /* Image box */
+
+
+        .game-switcher{
+          margin-top:22px;
+          padding:16px;
+          border-radius:18px;
+          background:rgba(255,255,255,0.045);
+          border:1px solid rgba(255,255,255,0.10);
+        }
+        .game-switch-grid{
+          display:grid;
+          grid-template-columns:repeat(2,minmax(0,1fr));
+          gap:8px;
+          margin-top:12px;
+        }
+        .game-switch-btn{
+          border:1px solid rgba(255,255,255,0.12);
+          background:rgba(255,255,255,0.06);
+          color:var(--text);
+          border-radius:12px;
+          padding:10px 12px;
+          font-weight:900;
+          cursor:pointer;
+          transition:transform .18s ease,border-color .18s ease,background .18s ease;
+        }
+        .game-switch-btn:hover{
+          transform:translateY(-2px);
+          border-color:rgba(56,217,255,.55);
+          background:rgba(56,217,255,.10);
+        }
 
         .party-question{
           min-height:230px;
@@ -1618,7 +1856,7 @@ export default function RoomPage() {
 
                   {room.currentQuestion.options && (
                     <>
-                    <div className="option-hint">Click an option, then press Enter / Submit</div>
+                    <div className="option-hint">Click an option, then press Enter / Submit. In prediction games, only the predicted majority answer scores.</div>
                     <div className="option-grid">
                       {room.currentQuestion.options.map((option, index) => (
                         <button

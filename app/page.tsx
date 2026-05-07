@@ -24,10 +24,10 @@ const PARTY_GAMES: { value: PartyGameType; emoji: string; label: string; desc: s
   { value: "logo-flag", emoji: "🏷️", label: "Logo & Flag Rush", desc: "Your classic image guessing game" },
   { value: "emoji", emoji: "😂", label: "Emoji Guess", desc: "Guess brands, movies, games from emojis" },
   { value: "typing", emoji: "⌨️", label: "Typing Battle", desc: "Type the phrase fastest" },
-  { value: "would-you-rather", emoji: "🤔", label: "Would You Rather", desc: "Pick A or B fast" },
+  { value: "would-you-rather", emoji: "🤔", label: "Majority Guess", desc: "Predict the popular choice" },
   { value: "trivia", emoji: "🧠", label: "Trivia Rush", desc: "Quick questions, speed scoring" },
   { value: "odd-one-out", emoji: "🧩", label: "Odd One Out", desc: "Find the one that doesn't belong" },
-  { value: "this-or-that", emoji: "⚡", label: "This or That", desc: "Fast preference choices" },
+  { value: "this-or-that", emoji: "⚡", label: "Prediction Pick", desc: "Choose the predicted winner" },
 ];
 
 
