@@ -31,10 +31,29 @@ type Player = {
   typing?: boolean;
   history?: Record<string, PlayerHistoryItem>;
 };
+type PartyGameType =
+  | "logo-flag"
+  | "emoji"
+  | "typing"
+  | "would-you-rather"
+  | "trivia"
+  | "odd-one-out"
+  | "this-or-that";
+
 type Question = {
-  type: "flag" | "logo";
-  imageUrl: string;
+  type:
+    | "flag"
+    | "logo"
+    | "emoji"
+    | "typing"
+    | "would-you-rather"
+    | "trivia"
+    | "odd-one-out"
+    | "this-or-that";
+  imageUrl?: string;
   fallbackUrl?: string;
+  prompt?: string;
+  options?: string[];
   answer: string;
   acceptedAnswers: string[];
 };
@@ -52,6 +71,7 @@ type Room = {
   roundAnswers?: Record<string, Record<string, { correct: boolean; timeTakenMs?: number; answeredAt?: number }>>;
   players?: Record<string, Player>;
   gameMode?: GameMode;
+  gameType?: PartyGameType;
   timerSeconds?: number;
   difficulty?: Difficulty | "all";
   solo?: boolean;
@@ -60,55 +80,178 @@ type Room = {
 type SoundName = "correct" | "wrong" | "timer" | "gameover";
 
 
+const PARTY_QUESTIONS: Record<Exclude<PartyGameType, "logo-flag">, Question[]> = {
+  emoji: [
+    { type: "emoji", prompt: "🦁👑", answer: "The Lion King", acceptedAnswers: ["The Lion King", "lion king"] },
+    { type: "emoji", prompt: "🍔👑", answer: "Burger King", acceptedAnswers: ["Burger King"] },
+    { type: "emoji", prompt: "🧊❄️👸", answer: "Frozen", acceptedAnswers: ["Frozen"] },
+    { type: "emoji", prompt: "🕷️👨", answer: "Spider-Man", acceptedAnswers: ["Spider-Man", "Spiderman", "Spider Man"] },
+    { type: "emoji", prompt: "⚡👦🪄", answer: "Harry Potter", acceptedAnswers: ["Harry Potter"] },
+    { type: "emoji", prompt: "🚗⚡🏁", answer: "Cars", acceptedAnswers: ["Cars"] },
+    { type: "emoji", prompt: "🍕🐢🥷", answer: "Teenage Mutant Ninja Turtles", acceptedAnswers: ["Teenage Mutant Ninja Turtles", "TMNT", "Ninja Turtles"] },
+    { type: "emoji", prompt: "🧽⭐🦑", answer: "SpongeBob", acceptedAnswers: ["SpongeBob", "Spongebob Squarepants", "SpongeBob SquarePants"] },
+    { type: "emoji", prompt: "🎮⛏️🟩", answer: "Minecraft", acceptedAnswers: ["Minecraft"] },
+    { type: "emoji", prompt: "🐭🏰✨", answer: "Disney", acceptedAnswers: ["Disney"] },
+    { type: "emoji", prompt: "🔴▶️", answer: "YouTube", acceptedAnswers: ["YouTube", "Youtube"] },
+    { type: "emoji", prompt: "📸🌈", answer: "Instagram", acceptedAnswers: ["Instagram", "Insta"] },
+    { type: "emoji", prompt: "🎵⬛", answer: "TikTok", acceptedAnswers: ["TikTok", "Tiktok"] },
+    { type: "emoji", prompt: "👻💛", answer: "Snapchat", acceptedAnswers: ["Snapchat", "Snap"] },
+    { type: "emoji", prompt: "☕⭐", answer: "Starbucks", acceptedAnswers: ["Starbucks"] },
+  ],
+  typing: [
+    { type: "typing", prompt: "the goofy shark stole my points", answer: "the goofy shark stole my points", acceptedAnswers: ["the goofy shark stole my points"] },
+    { type: "typing", prompt: "banana boss is locked in", answer: "banana boss is locked in", acceptedAnswers: ["banana boss is locked in"] },
+    { type: "typing", prompt: "never trust the mafia pigeon", answer: "never trust the mafia pigeon", acceptedAnswers: ["never trust the mafia pigeon"] },
+    { type: "typing", prompt: "rgb warrior carried the lobby", answer: "rgb warrior carried the lobby", acceptedAnswers: ["rgb warrior carried the lobby"] },
+    { type: "typing", prompt: "frog wizard cooked everyone", answer: "frog wizard cooked everyone", acceptedAnswers: ["frog wizard cooked everyone"] },
+    { type: "typing", prompt: "logo flag rush is chaos", answer: "logo flag rush is chaos", acceptedAnswers: ["logo flag rush is chaos"] },
+    { type: "typing", prompt: "i typed this without looking", answer: "i typed this without looking", acceptedAnswers: ["i typed this without looking"] },
+    { type: "typing", prompt: "the timer is bullying me", answer: "the timer is bullying me", acceptedAnswers: ["the timer is bullying me"] },
+    { type: "typing", prompt: "one more round then sleep", answer: "one more round then sleep", acceptedAnswers: ["one more round then sleep"] },
+    { type: "typing", prompt: "my keyboard has aura", answer: "my keyboard has aura", acceptedAnswers: ["my keyboard has aura"] },
+  ],
+  "would-you-rather": [
+    { type: "would-you-rather", prompt: "Would you rather lose Wi‑Fi for a week or lose snacks for a week?", options: ["A) Lose Wi‑Fi", "B) Lose snacks"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "lose wifi", "lose wi-fi", "lose snacks"] },
+    { type: "would-you-rather", prompt: "Would you rather only use YouTube or only use TikTok?", options: ["A) YouTube only", "B) TikTok only"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "youtube", "tiktok", "youtube only", "tiktok only"] },
+    { type: "would-you-rather", prompt: "Would you rather be super fast or super smart?", options: ["A) Super fast", "B) Super smart"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "fast", "smart", "super fast", "super smart"] },
+    { type: "would-you-rather", prompt: "Would you rather always win games or always win arguments?", options: ["A) Games", "B) Arguments"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "games", "arguments"] },
+    { type: "would-you-rather", prompt: "Would you rather have unlimited pizza or unlimited burgers?", options: ["A) Pizza", "B) Burgers"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "pizza", "burgers", "burger"] },
+  ],
+  trivia: [
+    { type: "trivia", prompt: "What country has the city Paris?", answer: "France", acceptedAnswers: ["France"] },
+    { type: "trivia", prompt: "How many players are on the field for one football/soccer team?", answer: "11", acceptedAnswers: ["11", "eleven"] },
+    { type: "trivia", prompt: "What planet is known as the Red Planet?", answer: "Mars", acceptedAnswers: ["Mars"] },
+    { type: "trivia", prompt: "What is the fastest land animal?", answer: "Cheetah", acceptedAnswers: ["Cheetah"] },
+    { type: "trivia", prompt: "What does NBA stand for?", answer: "National Basketball Association", acceptedAnswers: ["National Basketball Association", "NBA"] },
+    { type: "trivia", prompt: "What language is mainly used with React?", answer: "JavaScript", acceptedAnswers: ["JavaScript", "Javascript", "JS", "TypeScript", "Typescript", "TS"] },
+    { type: "trivia", prompt: "Which company makes the iPhone?", answer: "Apple", acceptedAnswers: ["Apple"] },
+    { type: "trivia", prompt: "What is 9 × 9?", answer: "81", acceptedAnswers: ["81", "eighty one", "eighty-one"] },
+  ],
+  "odd-one-out": [
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Apple", "Samsung", "Nike", "Google"], answer: "Nike", acceptedAnswers: ["Nike", "c", "3"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["France", "Germany", "Brazil", "Netflix"], answer: "Netflix", acceptedAnswers: ["Netflix", "d", "4"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["YouTube", "TikTok", "Instagram", "Toyota"], answer: "Toyota", acceptedAnswers: ["Toyota", "d", "4"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Pizza", "Burger", "Sushi", "PlayStation"], answer: "PlayStation", acceptedAnswers: ["PlayStation", "Playstation", "d", "4"] },
+    { type: "odd-one-out", prompt: "Pick the odd one out.", options: ["Lion", "Tiger", "Shark", "Adidas"], answer: "Adidas", acceptedAnswers: ["Adidas", "d", "4"] },
+  ],
+  "this-or-that": [
+    { type: "this-or-that", prompt: "Pick one fast.", options: ["A) Messi", "B) Ronaldo"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "messi", "ronaldo"] },
+    { type: "this-or-that", prompt: "Pick one fast.", options: ["A) Nike", "B) Adidas"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "nike", "adidas"] },
+    { type: "this-or-that", prompt: "Pick one fast.", options: ["A) iPhone", "B) Samsung"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "iphone", "samsung"] },
+    { type: "this-or-that", prompt: "Pick one fast.", options: ["A) Pizza", "B) Burger"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "pizza", "burger"] },
+    { type: "this-or-that", prompt: "Pick one fast.", options: ["A) Summer", "B) Winter"], answer: "No wrong answer", acceptedAnswers: ["a", "b", "summer", "winter"] },
+  ],
+};
+
+function normalizePartyAnswer(text: string) {
+  return text.trim().toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ");
+}
+
+function isPartyCorrectAnswer(userAnswer: string, question: Question) {
+  if (question.type === "flag" || question.type === "logo") {
+    return isCorrectAnswer(userAnswer, question as any);
+  }
+
+  const normalized = normalizePartyAnswer(userAnswer);
+
+  if ((question.type === "would-you-rather" || question.type === "this-or-that") && normalized.length > 0) {
+    return question.acceptedAnswers.some((accepted) => normalizePartyAnswer(accepted) === normalized);
+  }
+
+  return question.acceptedAnswers.some((accepted) => normalizePartyAnswer(accepted) === normalized);
+}
+
+function getRandomPartyQuestion(
+  usedIndexes: number[] = [],
+  room?: Room | null
+): { index: number; question: Question } {
+  const gameType = room?.gameType || "logo-flag";
+
+  if (gameType === "logo-flag") {
+    return getRandomQuestionByMode(usedIndexes, room?.gameMode || "mix", room?.difficulty || "all") as any;
+  }
+
+  const pool = PARTY_QUESTIONS[gameType];
+  const availableIndexes = pool.map((_, index) => index).filter((index) => !usedIndexes.includes(index));
+  const finalPool = availableIndexes.length > 0 ? availableIndexes : pool.map((_, index) => index);
+  const pickedIndex = finalPool[Math.floor(Math.random() * finalPool.length)];
+
+  return {
+    index: pickedIndex,
+    question: pool[pickedIndex],
+  };
+}
+
+function getGameLabel(gameType?: PartyGameType) {
+  const labels: Record<PartyGameType, string> = {
+    "logo-flag": "{getGameLabel(room.gameType)}",
+    emoji: "Emoji Guess",
+    typing: "Typing Battle",
+    "would-you-rather": "Would You Rather",
+    trivia: "Trivia Rush",
+    "odd-one-out": "Odd One Out",
+    "this-or-that": "This or That",
+  };
+
+  return labels[gameType || "logo-flag"];
+}
+
+function getQuestionLabel(question?: Question) {
+  if (!question) return "Question";
+  const labels: Record<Question["type"], string> = {
+    flag: "🌍 Flag",
+    logo: "🏷️ Logo",
+    emoji: "😂 Emoji",
+    typing: "⌨️ Typing",
+    "would-you-rather": "🤔 Would You Rather",
+    trivia: "🧠 Trivia",
+    "odd-one-out": "🧩 Odd One Out",
+    "this-or-that": "⚡ This or That",
+  };
+
+  return labels[question.type];
+}
+
+
+
 const FUNNY_AVATARS = [
-  { id: "brainrot-shark", label: "Brainrot Shark", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=TralaleroShark&backgroundColor=b6e3f4,c0aede,d1d4f9" },
-  { id: "skibidi-ceo", label: "Skibidi CEO", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=SkibidiCEO2026&backgroundColor=ffd5dc,c0aede,b6e3f4" },
-  { id: "sigma-boss", label: "Sigma Boss", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SigmaBoss&backgroundColor=ffdfbf,b6e3f4,c0aede" },
-  { id: "aura-maxxer", label: "Aura Maxxer", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=AuraMaxxer&backgroundColor=c0aede,b6e3f4,fff1ba" },
-  { id: "rizz-wizard", label: "Rizz Wizard", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=RizzWizard&backgroundColor=d1d4f9,ffd5dc,c0aede" },
-  { id: "delulu-queen", label: "Delulu Queen", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=DeluluQueen&backgroundColor=ffd5dc,ffdfbf,d1d4f9" },
-  { id: "ohio-final-boss", label: "Ohio Final Boss", url: "https://api.dicebear.com/7.x/croodles/svg?seed=OhioFinalBoss&backgroundColor=b6e3f4,fff1ba,c0aede" },
-  { id: "npc-legend", label: "NPC Legend", url: "https://api.dicebear.com/7.x/personas/svg?seed=NPCLegend&backgroundColor=d1d4f9,b6e3f4,ffdfbf" },
-  { id: "goofy gremlin", label: "Goofy Gremlin", url: "https://api.dicebear.com/7.x/big-smile/svg?seed=GoofyGremlin&backgroundColor=ffdfbf,ffd5dc,b6e3f4" },
-  { id: "cooked-cat", label: "Cooked Cat", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=CookedCat2026&backgroundColor=ffd5dc,c0aede,b6e3f4" },
-  { id: "locked-in-larry", label: "Locked-In Larry", url: "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=LockedInLarry&backgroundColor=b6e3f4,d1d4f9,c0aede" },
-  { id: "side-eye-sam", label: "Side-Eye Sam", url: "https://api.dicebear.com/7.x/big-ears/svg?seed=SideEyeSam&backgroundColor=fff1ba,c0aede,ffd5dc" },
-  { id: "cappuccino-baller", label: "Cappuccino Baller", url: "https://api.dicebear.com/7.x/lorelei-neutral/svg?seed=CappuccinoBaller&backgroundColor=ffdfbf,fff1ba,ffd5dc" },
-  { id: "croc-plane", label: "Croc Plane", url: "https://api.dicebear.com/7.x/bottts/svg?seed=CrocPlane&backgroundColor=c0aede,b6e3f4,ffdfbf" },
-  { id: "don-lobster", label: "Don Lobster", url: "https://api.dicebear.com/7.x/croodles-neutral/svg?seed=DonLobster&backgroundColor=ffd5dc,b6e3f4,c0aede" },
+  { id: "brainrot-king", label: "Brainrot King", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=BrainrotKing&backgroundColor=b6e3f4,c0aede,ffd5dc" },
+  { id: "skibidi-boss", label: "Skibidi Boss", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=SkibidiBoss&backgroundColor=d1d4f9,c0aede,b6e3f4" },
+  { id: "sigma-stare", label: "Sigma Stare", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SigmaStare&backgroundColor=ffdfbf,b6e3f4,c0aede" },
+  { id: "aura-farmer", label: "Aura Farmer", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=AuraFarmer&backgroundColor=fff1ba,c0aede,b6e3f4" },
+  { id: "rizz-goblin", label: "Rizz Goblin", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=RizzGoblin&backgroundColor=ffd5dc,ffdfbf,d1d4f9" },
+  { id: "delulu-duck", label: "Delulu Duck", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=DeluluDuck&backgroundColor=b6e3f4,ffd5dc,fff1ba" },
+  { id: "ohio-wizard", label: "Ohio Wizard", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=OhioWizard&backgroundColor=c0aede,ffdfbf,d1d4f9" },
+  { id: "npc-streamer", label: "NPC Streamer", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=NPCStreamer&backgroundColor=b6e3f4,d1d4f9,ffd5dc" },
+  { id: "goofy-ahh", label: "Goofy Ahh", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=GoofyAhh&backgroundColor=ffdfbf,b6e3f4,c0aede" },
+  { id: "cooked-cat", label: "Cooked Cat", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=CookedCat&backgroundColor=ffd5dc,c0aede,b6e3f4" },
+  { id: "locked-in", label: "Locked In", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=LockedIn&backgroundColor=d1d4f9,b6e3f4,ffdfbf" },
+  { id: "side-eye", label: "Side Eye", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SideEye&backgroundColor=fff1ba,c0aede,ffd5dc" },
+
+  { id: "italian-shark", label: "Sneaker Shark", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=SneakerShark&backgroundColor=b6e3f4,d1d4f9,c0aede" },
+  { id: "cappuccino-baller", label: "Cappuccino Baller", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=CappuccinoBaller&backgroundColor=ffdfbf,fff1ba,ffd5dc" },
+  { id: "crocodile-plane", label: "Croc Plane", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=CrocPlane&backgroundColor=c0aede,b6e3f4,ffdfbf" },
+  { id: "patapim-tree", label: "Patapim Tree", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=PatapimTree&backgroundColor=d1d4f9,fff1ba,b6e3f4" },
+  { id: "lobster-don", label: "Don Lobster", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=DonLobster&backgroundColor=ffd5dc,b6e3f4,c0aede" },
   { id: "mango-maniac", label: "Mango Maniac", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=MangoManiac&backgroundColor=fff1ba,ffdfbf,c0aede" },
-  { id: "toilet-tycoon", label: "Toilet Tycoon", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=ToiletTycoon&backgroundColor=d1d4f9,c0aede,ffd5dc" },
-  { id: "sixty-seven", label: "67 Bandit", url: "https://api.dicebear.com/7.x/pixel-art/svg?seed=SixtySevenBandit&backgroundColor=b6e3f4,ffdfbf,d1d4f9" },
-  { id: "chill-guy", label: "Chill Guy", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=ChillGuyEnergy&backgroundColor=c0aede,b6e3f4,fff1ba" },
-  { id: "yapper-9000", label: "Yapper 9000", url: "https://api.dicebear.com/7.x/bottts/svg?seed=Yapper9000&backgroundColor=ffd5dc,d1d4f9,b6e3f4" },
-  { id: "crashout-kid", label: "Crashout Kid", url: "https://api.dicebear.com/7.x/big-smile/svg?seed=CrashoutKid&backgroundColor=ffdfbf,ffd5dc,c0aede" },
-  { id: "low-taper", label: "Low Taper", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=LowTaperLegend&backgroundColor=b6e3f4,c0aede,d1d4f9" },
-  { id: "sus-nugget", label: "Sus Nugget", url: "https://api.dicebear.com/7.x/thumbs/svg?seed=SusNugget&backgroundColor=fff1ba,ffd5dc,ffdfbf" },
-  { id: "rage-bait", label: "Rage Bait", url: "https://api.dicebear.com/7.x/personas/svg?seed=RageBait&backgroundColor=d1d4f9,ffd5dc,c0aede" },
+  { id: "toilet-ceo", label: "Toilet CEO", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=ToiletCEO&backgroundColor=d1d4f9,c0aede,ffd5dc" },
+  { id: "67-bandit", label: "67 Bandit", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SixtySevenBandit&backgroundColor=b6e3f4,ffdfbf,d1d4f9" },
+
+  { id: "chill-guy", label: "Chill Guy Energy", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=ChillGuyEnergy&backgroundColor=c0aede,b6e3f4,fff1ba" },
+  { id: "yapper-3000", label: "Yapper 3000", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Yapper3000&backgroundColor=ffd5dc,d1d4f9,b6e3f4" },
+  { id: "crashout", label: "Crashout Gremlin", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=CrashoutGremlin&backgroundColor=ffdfbf,ffd5dc,c0aede" },
+  { id: "low-taper", label: "Low Taper Legend", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=LowTaperLegend&backgroundColor=b6e3f4,c0aede,d1d4f9" },
+  { id: "sus-nugget", label: "Sus Nugget", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=SusNugget&backgroundColor=fff1ba,ffd5dc,ffdfbf" },
+  { id: "rage-baiter", label: "Rage Baiter", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=RageBaiter&backgroundColor=d1d4f9,ffd5dc,c0aede" },
   { id: "ratio-robot", label: "Ratio Robot", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=RatioRobot&backgroundColor=b6e3f4,c0aede,ffdfbf" },
-  { id: "gyatt-goblin", label: "Gyatt Goblin", url: "https://api.dicebear.com/7.x/big-ears-neutral/svg?seed=GyattGoblin&backgroundColor=ffd5dc,c0aede,fff1ba" },
-  { id: "doom-scroller", label: "Doom Scroller", url: "https://api.dicebear.com/7.x/miniavs/svg?seed=DoomScroller&backgroundColor=c0aede,d1d4f9,b6e3f4" },
-  { id: "meme-merchant", label: "Meme Merchant", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=MemeMerchant&backgroundColor=ffdfbf,c0aede,b6e3f4" },
-  { id: "ping-spammer", label: "Ping Spammer", url: "https://api.dicebear.com/7.x/bottts/svg?seed=PingSpammer&backgroundColor=d1d4f9,fff1ba,ffd5dc" },
-  { id: "lag-monster", label: "Lag Monster", url: "https://api.dicebear.com/7.x/croodles/svg?seed=LagMonster&backgroundColor=b6e3f4,c0aede,ffdfbf" },
-  { id: "noob-master", label: "Noob Master", url: "https://api.dicebear.com/7.x/pixel-art-neutral/svg?seed=NoobMaster&backgroundColor=ffd5dc,b6e3f4,d1d4f9" },
-  { id: "clutch-demon", label: "Clutch Demon", url: "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=ClutchDemon&backgroundColor=ffdfbf,d1d4f9,c0aede" },
-  { id: "quiz-menace", label: "Quiz Menace", url: "https://api.dicebear.com/7.x/big-smile/svg?seed=QuizMenace&backgroundColor=fff1ba,b6e3f4,ffd5dc" },
-  { id: "tab-switcher", label: "Tab Switcher", url: "https://api.dicebear.com/7.x/personas/svg?seed=TabSwitcher&backgroundColor=c0aede,ffdfbf,b6e3f4" },
-  { id: "keyboard-warrior", label: "Keyboard Warrior", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=KeyboardWarrior&backgroundColor=b6e3f4,ffd5dc,c0aede" },
-  { id: "sleepy-winner", label: "Sleepy Winner", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=SleepyWinner&backgroundColor=d1d4f9,fff1ba,c0aede" },
-  { id: "banana-mode", label: "Banana Mode", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=BananaMode&backgroundColor=fff1ba,ffdfbf,ffd5dc" },
-  { id: "pickle-energy", label: "Pickle Energy", url: "https://api.dicebear.com/7.x/croodles-neutral/svg?seed=PickleEnergy&backgroundColor=b6e3f4,c0aede,d1d4f9" },
-  { id: "alien-yapper", label: "Alien Yapper", url: "https://api.dicebear.com/7.x/bottts/svg?seed=AlienYapper&backgroundColor=c0aede,d1d4f9,ffd5dc" },
-  { id: "final-boss-baby", label: "Final Boss Baby", url: "https://api.dicebear.com/7.x/big-ears/svg?seed=FinalBossBaby&backgroundColor=ffd5dc,ffdfbf,b6e3f4" },
-  { id: "giga-brain", label: "Giga Brain", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=GigaBrain&backgroundColor=d1d4f9,b6e3f4,c0aede" },
-  { id: "wifi-goblin", label: "WiFi Goblin", url: "https://api.dicebear.com/7.x/miniavs/svg?seed=WifiGoblin&backgroundColor=ffdfbf,c0aede,fff1ba" },
-  { id: "sweat-mode", label: "Sweat Mode", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SweatMode&backgroundColor=b6e3f4,d1d4f9,ffdfbf" },
-  { id: "random-main", label: "Random Main", url: "https://api.dicebear.com/7.x/pixel-art/svg?seed=RandomMain&backgroundColor=ffd5dc,b6e3f4,c0aede" },
-  { id: "mute-button", label: "Mute Button", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=MuteButton&backgroundColor=c0aede,ffd5dc,d1d4f9" },
-  { id: "quiz-goblin", label: "Quiz Goblin", url: "https://api.dicebear.com/7.x/big-smile/svg?seed=QuizGoblin2026&backgroundColor=fff1ba,c0aede,b6e3f4" },
-  { id: "sauce-lord", label: "Sauce Lord", url: "https://api.dicebear.com/7.x/personas/svg?seed=SauceLord&backgroundColor=ffdfbf,ffd5dc,c0aede" },
-  { id: "victory-merchant", label: "Victory Merchant", url: "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=VictoryMerchant&backgroundColor=b6e3f4,fff1ba,d1d4f9" },
+  { id: "gyatt-goblin", label: "Gyatt Goblin", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=GyattGoblin&backgroundColor=ffd5dc,c0aede,fff1ba" },
+
+  { id: "pixel-bot", label: "Pixel Bot", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=PixelBot&backgroundColor=b6e3f4,c0aede,d1d4f9" },
+  { id: "toast-bot", label: "Toast Bot", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=ToastBot&backgroundColor=ffd5dc,ffdfbf,c0aede" },
+  { id: "alien-bot", label: "Alien Bot", url: "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=AlienBot&backgroundColor=c0aede,b6e3f4,d1d4f9" },
+  { id: "chaos-frog", label: "Chaos Frog", url: "https://api.dicebear.com/7.x/fun-emoji/svg?seed=ChaosFrog&backgroundColor=b6e3f4,fff1ba,c0aede" },
+  { id: "sir-goof", label: "Sir Goof", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=SirGoof&backgroundColor=ffdfbf,c0aede,b6e3f4" },
+  { id: "captain-meme", label: "Captain Meme", url: "https://api.dicebear.com/7.x/adventurer/svg?seed=CaptainMeme&backgroundColor=b6e3f4,d1d4f9,ffd5dc" },
 ];
 
 const PLAYER_COLORS = ["#38d9ff", "#a78bfa", "#facc15", "#4af0a0", "#fb7185", "#f472b6", "#60a5fa"];
@@ -418,8 +561,7 @@ export default function RoomPage() {
   }
 
   async function startGame() {
-    const mode = room?.gameMode || "mix";
-    const random = getRandomQuestionByMode([], mode, room?.difficulty || "all");
+    const random = getRandomPartyQuestion([], room);
     await update(ref(db, `rooms/${roomCode}`), {
       status: "playing",
       questionIndex: random.index,
@@ -442,8 +584,7 @@ export default function RoomPage() {
       return;
     }
     const used = room?.usedQuestionIndexes || [];
-    const mode = room?.gameMode || "mix";
-    const random = getRandomQuestionByMode(used, mode, room?.difficulty || "all");
+    const random = getRandomPartyQuestion(used, room);
     await update(ref(db, `rooms/${roomCode}`), {
       status: "playing",
       questionIndex: random.index,
@@ -517,7 +658,7 @@ export default function RoomPage() {
     if (room.roundAnswers?.[questionKey]?.[uid]?.correct) {
       setFeedback({ text: "Already answered!", ok: false }); return;
     }
-    const correct = isCorrectAnswer(answer, room.currentQuestion);
+    const correct = isPartyCorrectAnswer(answer, room.currentQuestion);
     if (!correct) {
       playSound("wrong");
 
@@ -912,6 +1053,77 @@ export default function RoomPage() {
         }
 
         /* Image box */
+
+        .party-question{
+          min-height:230px;
+          margin:18px 0;
+          border-radius:30px;
+          padding:30px;
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          justify-content:center;
+          gap:18px;
+          text-align:center;
+          background:
+            radial-gradient(circle at 50% 15%, rgba(167,139,250,0.18), transparent 34%),
+            linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.025));
+          border:1px solid rgba(255,255,255,0.12);
+          box-shadow:0 18px 42px rgba(0,0,0,0.26),0 0 0 1px rgba(255,255,255,0.08) inset;
+          animation:popIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+        .party-game-label{
+          font-size:11px;
+          text-transform:uppercase;
+          letter-spacing:.16em;
+          color:var(--muted);
+          font-weight:900;
+        }
+        .emoji-prompt{
+          font-size:70px;
+          line-height:1;
+          filter:drop-shadow(0 14px 26px rgba(0,0,0,.25));
+        }
+        .party-prompt{
+          font-family:'Syne',sans-serif;
+          font-size:28px;
+          line-height:1.2;
+          font-weight:900;
+          color:var(--text);
+          max-width:720px;
+        }
+        .party-typing .party-prompt{
+          font-size:24px;
+          color:var(--accent);
+          background:rgba(56,217,255,.08);
+          border:1px solid rgba(56,217,255,.16);
+          padding:18px 20px;
+          border-radius:18px;
+        }
+        .option-grid{
+          display:grid;
+          grid-template-columns:repeat(2,minmax(0,1fr));
+          gap:10px;
+          width:100%;
+          max-width:620px;
+        }
+        .option-card{
+          background:rgba(255,255,255,0.07);
+          border:1px solid rgba(255,255,255,0.14);
+          color:var(--text);
+          border-radius:16px;
+          padding:14px 16px;
+          font-weight:900;
+          cursor:pointer;
+          transition:transform .18s ease,border-color .18s ease,background .18s ease;
+        }
+        .option-card:hover:not(:disabled){
+          transform:translateY(-2px);
+          border-color:rgba(56,217,255,.55);
+          background:rgba(56,217,255,.10);
+        }
+        .option-card:disabled{opacity:.55;cursor:not-allowed}
+
         .img-box{
           background:
             radial-gradient(circle at 50% 45%, rgba(56,217,255,0.09), transparent 34%),
@@ -1129,25 +1341,20 @@ export default function RoomPage() {
         
         .avatar-picker-grid{
           display:grid;
-          grid-template-columns:repeat(auto-fill,minmax(84px,1fr));
-          gap:12px;
+          grid-template-columns:repeat(auto-fill,minmax(58px,1fr));
+          gap:10px;
           margin:14px 0 4px;
-          max-height:330px;
+          max-height:260px;
           overflow-y:auto;
-          padding-right:6px;
+          padding-right:4px;
         }
         .avatar-card{
           border:1px solid rgba(255,255,255,0.12);
-          background:rgba(255,255,255,0.045);
-          border-radius:18px;
-          padding:8px 7px 7px;
+          background:rgba(255,255,255,0.04);
+          border-radius:16px;
+          padding:6px;
           cursor:pointer;
           transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
-          min-height:112px;
-          display:flex;
-          flex-direction:column;
-          align-items:center;
-          gap:6px;
         }
         .avatar-card:hover{transform:translateY(-2px);border-color:rgba(56,217,255,0.45)}
         .avatar-card.selected{
@@ -1156,22 +1363,12 @@ export default function RoomPage() {
           box-shadow:0 0 0 2px rgba(56,217,255,0.16),0 10px 24px rgba(56,217,255,0.14);
         }
         .avatar-card img{
-          width:58px;
-          height:58px;
+          width:100%;
+          aspect-ratio:1/1;
           object-fit:cover;
           display:block;
-          border-radius:16px;
+          border-radius:12px;
           background:rgba(255,255,255,0.06);
-        }
-        .avatar-card span{
-          max-width:100%;
-          overflow:hidden;
-          text-overflow:ellipsis;
-          white-space:nowrap;
-          font-size:10px;
-          font-weight:800;
-          color:var(--muted);
-          text-align:center;
         }
         .avatar-badge img{
           width:100%;
@@ -1304,7 +1501,6 @@ export default function RoomPage() {
                     title={avatar.label}
                   >
                     <img src={avatar.url} alt={avatar.label} />
-                    <span>{avatar.label}</span>
                   </button>
                 ))}
               </div>
@@ -1338,7 +1534,7 @@ export default function RoomPage() {
               {/* Top row: question type + timer */}
               <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16 }}>
                 <div className="q-type-badge">
-                  {room.currentQuestion.type === "flag" ? "🌍 Flag" : "🏷️ Logo"}
+                  {getQuestionLabel(room.currentQuestion)}
                 </div>
 
                 <div className="timer-wrap">
@@ -1363,7 +1559,9 @@ export default function RoomPage() {
               {isReveal && (
                 <div className="reveal-box">
                   <div className="reveal-label">Correct answer</div>
-                  <div className="reveal-answer">{room.currentQuestion.answer}</div>
+                  <div className="reveal-answer">
+                    {room.currentQuestion.answer}
+                  </div>
                   {correctPlayers.length > 0 && (
                     <div className="correct-ranking">
                       <div className="correct-ranking-title">Fastest correct answers</div>
@@ -1384,32 +1582,69 @@ export default function RoomPage() {
                 </div>
               )}
 
-              {/* Image */}
-              <div className="img-box" key={room.questionIndex}>
-                <img
-                  src={room.currentQuestion.imageUrl}
-                  alt="Guess this"
-                  draggable={false}
-                  onContextMenu={(event) => event.preventDefault()}
-                  onError={(event) => {
-                    const img = event.currentTarget;
-                    if (img.dataset.fallbackUsed === "true") return;
-                    img.dataset.fallbackUsed = "true";
-                    img.src =
-                      room.currentQuestion?.fallbackUrl ||
-                      (room.currentQuestion?.type === "logo"
-                        ? `https://www.google.com/s2/favicons?domain=${room.currentQuestion.answer.toLowerCase().replace(/\s+/g, "")}.com&sz=256`
-                        : "/favicon.ico");
-                  }}
-                />
-              </div>
+              {/* Question content */}
+              {room.currentQuestion.type === "flag" || room.currentQuestion.type === "logo" ? (
+                <div className="img-box" key={room.questionIndex}>
+                  <img
+                    src={room.currentQuestion.imageUrl}
+                    alt="Guess this"
+                    draggable={false}
+                    onContextMenu={(event) => event.preventDefault()}
+                    onError={(event) => {
+                      const img = event.currentTarget;
+                      if (img.dataset.fallbackUsed === "true") return;
+                      img.dataset.fallbackUsed = "true";
+                      img.src =
+                        room.currentQuestion?.fallbackUrl ||
+                        (room.currentQuestion?.type === "logo"
+                          ? `https://www.google.com/s2/favicons?domain=${room.currentQuestion.answer.toLowerCase().replace(/\s+/g, "")}.com&sz=256`
+                          : "/favicon.ico");
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className={`party-question party-${room.currentQuestion.type}`} key={room.questionIndex}>
+                  <div className="party-game-label">{getGameLabel(room.gameType)}</div>
+                  <div className={room.currentQuestion.type === "emoji" ? "emoji-prompt" : "party-prompt"}>
+                    {room.currentQuestion.prompt}
+                  </div>
+
+                  {room.currentQuestion.options && (
+                    <div className="option-grid">
+                      {room.currentQuestion.options.map((option, index) => (
+                        <button
+                          key={option}
+                          type="button"
+                          className="option-card"
+                          onClick={() => {
+                            const letter = String.fromCharCode(65 + index);
+                            setAnswer(letter);
+                            setTimeout(() => submitAnswer(), 0);
+                          }}
+                          disabled={isReveal || timeLeft === 0 || !!alreadyAnswered}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Answer input */}
               <div className="answer-row">
                 <input
                   ref={answerInputRef}
                   className={`answer-input ${alreadyAnswered ? "answered" : ""}`}
-                  placeholder={alreadyAnswered ? "✓ Answered correctly!" : "Type your answer…"}
+                  placeholder={
+                    alreadyAnswered
+                      ? "✓ Answered correctly!"
+                      : room.currentQuestion.type === "typing"
+                        ? "Type the phrase exactly…"
+                        : room.currentQuestion.options
+                          ? "Type A/B/C/D or click an option…"
+                          : "Type your answer…"
+                  }
                   value={answer}
                   onChange={(e) => handleAnswerChange(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !alreadyAnswered && !isReveal && submitAnswer()}

@@ -12,11 +12,25 @@ function createRoomCode() {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
 }
 
+type PartyGameType = "logo-flag" | "emoji" | "typing" | "would-you-rather" | "trivia" | "odd-one-out" | "this-or-that";
+
 const MODES: { value: GameMode; emoji: string; label: string; desc: string }[] = [
   { value: "flags", emoji: "🌍", label: "Flags Only", desc: "150+ countries" },
   { value: "logos", emoji: "🏷️", label: "Logos Only", desc: "100+ brands" },
   { value: "mix",   emoji: "🎲", label: "Mix Both",  desc: "Flags + logos" },
 ];
+
+
+const PARTY_GAMES: { value: PartyGameType; emoji: string; label: string; desc: string }[] = [
+  { value: "logo-flag", emoji: "🏷️", label: "Logo & Flag Rush", desc: "Your classic image guessing game" },
+  { value: "emoji", emoji: "😂", label: "Emoji Guess", desc: "Guess brands, movies, games from emojis" },
+  { value: "typing", emoji: "⌨️", label: "Typing Battle", desc: "Type the phrase fastest" },
+  { value: "would-you-rather", emoji: "🤔", label: "Would You Rather", desc: "Pick A or B fast" },
+  { value: "trivia", emoji: "🧠", label: "Trivia Rush", desc: "Quick questions, speed scoring" },
+  { value: "odd-one-out", emoji: "🧩", label: "Odd One Out", desc: "Find the one that doesn't belong" },
+  { value: "this-or-that", emoji: "⚡", label: "This or That", desc: "Fast preference choices" },
+];
+
 
 export default function Home() {
   const router = useRouter();
@@ -26,6 +40,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [gameMode, setGameMode] = useState<GameMode>("mix");
+  const [gameType, setGameType] = useState<PartyGameType>("logo-flag");
   const [rounds, setRounds] = useState(10);
   const [timerSeconds, setTimerSeconds] = useState(15);
   const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
@@ -56,6 +71,7 @@ export default function Home() {
     await set(ref(db, `rooms/${roomCode}`), {
       hostId: user.uid,
       status: "lobby",
+      gameType,
       gameMode,
       totalRounds: rounds,
       timerSeconds,
@@ -78,17 +94,18 @@ export default function Home() {
 
     await set(ref(db, `rooms/${roomCode}`), {
       hostId: user.uid,
-      status: "playing",
+      status: "lobby",
       solo: true,
+      gameType,
       gameMode,
       totalRounds: rounds,
       timerSeconds,
       difficulty,
-      questionIndex: first.index,
-      roundNumber: 1,
-      usedQuestionIndexes: [first.index],
-      currentQuestion: first.question,
-      roundStartedAt: Date.now(),
+      questionIndex: 0,
+      roundNumber: 0,
+      usedQuestionIndexes: [],
+      currentQuestion: null,
+      roundStartedAt: null,
       roundAnswers: {},
       phase: "question",
       revealStartedAt: null,
@@ -336,6 +353,35 @@ export default function Home() {
         .mode-desc { font-size:10px;color:var(--muted);text-align:center; }
         .mode-btn.selected .mode-desc { color:inherit;opacity:0.7; }
 
+
+
+        .game-picker-grid{
+          display:grid;
+          grid-template-columns:repeat(2,minmax(0,1fr));
+          gap:10px;
+        }
+        .game-card{
+          display:flex;
+          flex-direction:column;
+          gap:5px;
+          text-align:left;
+          border:1px solid var(--border);
+          background:rgba(255,255,255,0.045);
+          border-radius:16px;
+          padding:12px;
+          color:var(--text);
+          cursor:pointer;
+          transition:transform .18s ease,border-color .18s ease,background .18s ease;
+        }
+        .game-card:hover{transform:translateY(-2px);border-color:rgba(56,217,255,.45)}
+        .game-card.selected{
+          border-color:rgba(56,217,255,.9);
+          background:rgba(56,217,255,.09);
+          box-shadow:0 0 0 2px rgba(56,217,255,.15);
+        }
+        .game-emoji{font-size:24px}
+        .game-name{font-weight:900;font-size:13px}
+        .game-desc{font-size:11px;color:var(--muted);line-height:1.25}
 
         .settings-grid{
           display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;
