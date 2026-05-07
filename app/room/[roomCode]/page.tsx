@@ -416,27 +416,8 @@ export default function RoomPage() {
   }
 
 
-  async function skipQuestion() {
-    if (!isHost || room?.status !== "playing") return;
 
-    await update(ref(db, `rooms/${roomCode}`), {
-      phase: "reveal",
-      revealStartedAt: serverTimestamp(),
-    });
-  }
 
-  async function endGame() {
-    if (!isHost) return;
-
-    await update(ref(db, `rooms/${roomCode}`), {
-      status: "ended",
-    });
-  }
-
-  async function restartGame() {
-    if (!isHost) return;
-    await startGame();
-  }
 
   async function sendReaction(emoji: string) {
     if (!uid) return;
