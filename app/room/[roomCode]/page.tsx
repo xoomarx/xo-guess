@@ -346,7 +346,7 @@ export default function RoomPage() {
       phase: "question",
       revealStartedAt: null,
     });
-    setAnswer(""); setFeedback(null); lastTimerSoundSecondRef.current = null; lastTimerSoundSecondRef.current = null;
+    setAnswer(""); setFeedback(null); lastTimerSoundSecondRef.current = null;
   }
 
   async function nextQuestion() {
@@ -1051,18 +1051,6 @@ export default function RoomPage() {
                 <button className="btn btn-primary" onClick={joinRoom} disabled={!name.trim()}>
                   Join Game
                 </button>
-                {sortedPlayers[0]?.history && (
-                <div className="history-list">
-                  <div className="sidebar-title">Winner history</div>
-                  {Object.values(sortedPlayers[0].history || {}).slice(-5).map((item) => (
-                    <div key={item.round} className="history-row">
-                      <span>{item.correct ? "✅" : "❌"} R{item.round}: {item.correctAnswer}</span>
-                      <strong>{item.correct ? `+${item.points}` : "+0"}</strong>
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {isHost && (
                   <button className="btn btn-green" onClick={startGame} disabled={players.length === 0}>
                     ▶ Start Game
