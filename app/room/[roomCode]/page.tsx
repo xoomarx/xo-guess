@@ -251,6 +251,17 @@ export default function RoomPage() {
     return () => unsubscribe();
   }, [roomCode]);
 
+  // Sync selected avatar into Firebase so the leaderboard updates instantly.
+  useEffect(() => {
+    if (!uid || !room?.players?.[uid]) return;
+    if (!selectedAvatar) return;
+    if (room.players[uid]?.avatar === selectedAvatar) return;
+
+    update(ref(db, `rooms/${roomCode}/players/${uid}`), {
+      avatar: selectedAvatar,
+    });
+  }, [selectedAvatar, uid, roomCode, room?.players?.[uid]?.avatar]);
+
   useEffect(() => {
     if (room?.status !== "playing") return;
     if (room?.phase !== "question") return;
@@ -370,6 +381,12 @@ export default function RoomPage() {
   function chooseAvatar(avatarUrl: string) {
     setSelectedAvatar(avatarUrl);
     localStorage.setItem("avatar", avatarUrl);
+
+    if (uid && room?.players?.[uid]) {
+      update(ref(db, `rooms/${roomCode}/players/${uid}`), {
+        avatar: avatarUrl,
+      });
+    }
   }
 
   async function joinRoom() {
@@ -974,6 +991,51 @@ export default function RoomPage() {
           text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:14px;
         }
 
+
+        .leaderboard-card{
+          transition:transform .2s ease,padding .2s ease,box-shadow .2s ease;
+        }
+        .leaderboard-playing{
+          padding:26px;
+          box-shadow:0 28px 80px rgba(0,0,0,0.42),0 0 48px rgba(56,217,255,0.10);
+        }
+        .leaderboard-playing .sidebar-title{
+          font-size:13px;
+          margin-bottom:18px;
+        }
+        .leaderboard-playing .player-row{
+          padding:15px 16px;
+          border-radius:17px;
+          margin-bottom:10px;
+          min-height:58px;
+        }
+        .leaderboard-playing .player-name{
+          font-size:15px;
+          font-weight:800;
+        }
+        .leaderboard-playing .player-score{
+          font-size:20px;
+        }
+        .leaderboard-playing .player-medal{
+          font-size:20px;
+          min-width:28px;
+        }
+        .leaderboard-playing .player-rank-num{
+          font-size:13px;
+          min-width:28px;
+        }
+        .leaderboard-playing .avatar-badge{
+          width:42px!important;
+          height:42px!important;
+          margin-right:12px;
+          box-shadow:0 0 18px rgba(56,217,255,0.10);
+        }
+        .leaderboard-playing .typing-pill,
+        .leaderboard-playing .streak-pill{
+          display:inline-block;
+          margin-top:3px;
+        }
+
         .player-row{
           display:flex;align-items:center;gap:0;
           padding:11px 14px;border-radius:13px;
@@ -1224,6 +1286,11 @@ export default function RoomPage() {
                 <button className="btn btn-primary" onClick={joinRoom} disabled={!name.trim()}>
                   Join Game
                 </button>
+                {uid && room.players?.[uid] && (
+                  <button className="btn btn-ghost" onClick={() => chooseAvatar(selectedAvatar)}>
+                    Save avatar
+                  </button>
+                )}
                 {isHost && (
                   <button className="btn btn-green" onClick={startGame} disabled={players.length === 0}>
                     ▶ Start Game
@@ -1468,8 +1535,8 @@ export default function RoomPage() {
         </div>
 
         {/* ── SIDEBAR — Leaderboard ── */}
-        <div className="sidebar">
-          <div className="card">
+        <div className={`sidebar ${room.status === "playing" ? "sidebar-playing" : ""}`}>
+          <div className={`card leaderboard-card ${room.status === "playing" ? "leaderboard-playing" : ""}`}>
             <div className="sidebar-title">Leaderboard</div>
             {sortedPlayers.length === 0 && (
               <div style={{ color:"var(--muted)",fontSize:13,textAlign:"center",padding:"20px 0" }}>
@@ -1492,7 +1559,7 @@ export default function RoomPage() {
                   <span className="player-rank-num">#{index + 1}</span>
                 )}
                 <span className="avatar-badge" style={{ borderColor: player.color || "rgba(255,255,255,0.12)" }}>
-                  <img src={player.avatar || pickAvatar(player.name)} alt={player.name} />
+                  <img key={player.avatar || player.name} src={player.avatar || pickAvatar(player.name)} alt={player.name} />
                 </span>
                 <span className="player-name">
                   {player.name}
