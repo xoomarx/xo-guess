@@ -146,27 +146,6 @@ export default function RoomPage() {
     audio.onended = () => {
       if (stopTimer) clearTimeout(stopTimer);
     };
-  };
-
-    const audio = new Audio(files[name]);
-    audio.volume = name === "timer" ? 0.45 : 0.75;
-
-    let stopTimer: ReturnType<typeof setTimeout> | undefined;
-
-    audio.play().catch((error) => {
-      console.log("Sound failed:", name, error);
-    });
-
-    if (maxDurationMs) {
-      stopTimer = setTimeout(() => {
-        audio.pause();
-        audio.currentTime = 0;
-      }, maxDurationMs);
-    }
-
-    audio.onended = () => {
-      if (stopTimer) clearTimeout(stopTimer);
-    };
   }
 
   function enableSound() {
@@ -1051,7 +1030,7 @@ export default function RoomPage() {
                 <button className="btn btn-primary" onClick={joinRoom} disabled={!name.trim()}>
                   Join Game
                 </button>
-              {isHost && (
+                {isHost && (
                   <button className="btn btn-green" onClick={startGame} disabled={players.length === 0}>
                     ▶ Start Game
                   </button>
