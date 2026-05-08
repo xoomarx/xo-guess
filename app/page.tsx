@@ -11,7 +11,7 @@ function createRoomCode() {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
 }
 
-type PartyGameType = "logo-flag" | "emoji" | "typing" | "would-you-rather" | "trivia" | "odd-one-out" | "this-or-that";
+type PartyGameType = "logo-flag" | "party-mix" | "emoji" | "typing" | "would-you-rather" | "trivia" | "odd-one-out" | "this-or-that";
 
 const MODES: { value: GameMode; emoji: string; label: string; desc: string }[] = [
   { value: "flags", emoji: "🌍", label: "Flags Only", desc: "150+ countries" },
@@ -22,6 +22,7 @@ const MODES: { value: GameMode; emoji: string; label: string; desc: string }[] =
 
 const PARTY_GAMES: { value: PartyGameType; emoji: string; label: string; desc: string }[] = [
   { value: "logo-flag", emoji: "🏷️", label: "Logo & Flag Rush", desc: "Your classic image guessing game" },
+  { value: "party-mix", emoji: "🎉", label: "Party Mix", desc: "Random game type every round" },
   { value: "emoji", emoji: "😂", label: "Emoji Guess", desc: "Guess brands, movies, games from emojis" },
   { value: "typing", emoji: "⌨️", label: "Typing Battle", desc: "Type the phrase fastest" },
   { value: "would-you-rather", emoji: "🤔", label: "Majority Guess", desc: "Predict the popular choice" },

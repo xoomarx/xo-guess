@@ -29,10 +29,15 @@ type Player = {
   streak?: number;
   bestStreak?: number;
   typing?: boolean;
+  shieldActive?: boolean;
+  doubleNext?: boolean;
+  powerUps?: Record<string, boolean>;
+  rematchVote?: boolean;
   history?: Record<string, PlayerHistoryItem>;
 };
 type PartyGameType =
   | "logo-flag"
+  | "party-mix"
   | "emoji"
   | "typing"
   | "would-you-rather"
@@ -76,8 +81,15 @@ type Room = {
   difficulty?: Difficulty | "all";
   solo?: boolean;
   reactions?: Record<string, { emoji: string; name: string; createdAt: number }>;
+  extraTime?: number;
+  roundGameType?: PartyGameType;
+  rematchVotes?: Record<string, boolean>;
 };
 type SoundName = "correct" | "wrong" | "timer" | "gameover";
+
+const MIXABLE_GAMES: PartyGameType[] = ["logo-flag", "emoji", "typing", "would-you-rather", "trivia", "odd-one-out", "this-or-that"];
+
+
 
 
 const PARTY_QUESTIONS: Record<Exclude<PartyGameType, "logo-flag">, Question[]> = {
@@ -494,7 +506,10 @@ function getRandomPartyQuestion(
   usedIndexes: number[] = [],
   room?: Room | null
 ): { index: number; question: Question } {
-  const gameType = room?.gameType || "logo-flag";
+  const selectedGameType = room?.gameType || "logo-flag";
+  const gameType = selectedGameType === "party-mix"
+    ? MIXABLE_GAMES[Math.floor(Math.random() * MIXABLE_GAMES.length)]
+    : selectedGameType;
 
   if (gameType === "logo-flag") {
     return getRandomQuestionByMode(usedIndexes, room?.gameMode || "mix", room?.difficulty || "all") as any;
@@ -514,6 +529,7 @@ function getRandomPartyQuestion(
 function getGameLabel(gameType?: PartyGameType) {
   const labels: Record<PartyGameType, string> = {
     "logo-flag": "Logo & Flag Rush",
+    "party-mix": "Party Mix",
     emoji: "Emoji Guess",
     typing: "Typing Battle",
     "would-you-rather": "Majority Guess",
@@ -838,7 +854,7 @@ export default function RoomPage() {
       }
       if (!room.roundStartedAt) return;
       const elapsed = Math.floor((serverNow - room.roundStartedAt) / 1000);
-      const remaining = Math.max((room.timerSeconds || TIMER_SECONDS) - elapsed, 0);
+      const remaining = Math.max(((room.timerSeconds || TIMER_SECONDS) + (room.extraTime || 0)) - elapsed, 0);
       setTimeLeft(remaining);
       if (remaining === 0 && isHost && room.phase !== "reveal") {
         clearInterval(interval);
@@ -846,7 +862,7 @@ export default function RoomPage() {
       }
     }, 300);
     return () => clearInterval(interval);
-  }, [room?.status, room?.roundStartedAt, room?.revealStartedAt, room?.phase, room?.questionIndex, serverOffset, isHost]);
+  }, [room?.status, room?.roundStartedAt, room?.revealStartedAt, room?.phase, room?.questionIndex, room?.extraTime, serverOffset, isHost]);
 
   useEffect(() => {
     if (room?.status !== "playing") return;
@@ -898,8 +914,11 @@ export default function RoomPage() {
       totalRounds: room?.totalRounds || TOTAL_ROUNDS,
       usedQuestionIndexes: [random.index],
       currentQuestion: random.question,
+      roundGameType: random.question.type === "flag" || random.question.type === "logo" ? "logo-flag" : random.question.type,
       roundStartedAt: serverTimestamp(),
       roundAnswers: {},
+      extraTime: 0,
+      rematchVotes: {},
       phase: "question",
       revealStartedAt: null,
     });
@@ -920,7 +939,9 @@ export default function RoomPage() {
       roundNumber: currentRound + 1,
       usedQuestionIndexes: [...used, random.index],
       currentQuestion: random.question,
+      roundGameType: random.question.type === "flag" || random.question.type === "logo" ? "logo-flag" : random.question.type,
       roundStartedAt: serverTimestamp(),
+      extraTime: 0,
       phase: "question",
       revealStartedAt: null,
     });
@@ -939,6 +960,81 @@ export default function RoomPage() {
     }
   }
 
+
+
+  async function setLobbyGame(nextGameType: PartyGameType) {
+    if (!isHost || room?.status === "playing") return;
+
+    await update(ref(db, `rooms/${roomCode}`), {
+      gameType: nextGameType,
+    });
+  }
+
+  async function usePowerUp(power: "time" | "hint" | "shield" | "double") {
+    if (!uid || !room?.players?.[uid] || room.status !== "playing" || room.phase !== "question") return;
+
+    const used = room.players[uid]?.powerUps?.[power];
+
+    if (used) {
+      setFeedback({ text: "You already used that power-up.", ok: false });
+      return;
+    }
+
+    if (power === "time") {
+      await update(ref(db, `rooms/${roomCode}`), {
+        extraTime: (room.extraTime || 0) + 3,
+        [`players/${uid}/powerUps/time`]: true,
+      });
+      setFeedback({ text: "+3 seconds added for this round ⏱️", ok: true });
+      return;
+    }
+
+    if (power === "hint") {
+      await update(ref(db, `rooms/${roomCode}/players/${uid}/powerUps/hint`), true);
+      const answerText = room.currentQuestion?.answer || "";
+      const hint = answerText === "A" || answerText === "B"
+        ? "Hint: this is a prediction question. Trust the more popular pick."
+        : `Hint: starts with "${answerText[0] || "?"}" and has ${answerText.length} characters.`;
+      setFeedback({ text: hint, ok: true });
+      return;
+    }
+
+    if (power === "shield") {
+      await update(ref(db, `rooms/${roomCode}`), {
+        [`players/${uid}/powerUps/shield`]: true,
+        [`players/${uid}/shieldActive`]: true,
+      });
+      setFeedback({ text: "Shield active. Your next wrong answer is blocked 🛡️", ok: true });
+      return;
+    }
+
+    if (power === "double") {
+      await update(ref(db, `rooms/${roomCode}`), {
+        [`players/${uid}/powerUps/double`]: true,
+        [`players/${uid}/doubleNext`]: true,
+      });
+      setFeedback({ text: "Double points armed for your next correct answer ⚡", ok: true });
+    }
+  }
+
+  async function voteRematch() {
+    if (!uid || room?.status !== "ended") return;
+
+    const nextVotes = {
+      ...(room.rematchVotes || {}),
+      [uid]: true,
+    };
+
+    await update(ref(db, `rooms/${roomCode}`), {
+      [`rematchVotes/${uid}`]: true,
+    });
+
+    const needed = Math.ceil(Math.max(1, Object.keys(room.players || {}).length) / 2);
+
+    if (Object.keys(nextVotes).length >= needed) {
+      await startGame();
+    }
+  }
 
   async function skipQuestion() {
     if (!isHost || room?.status !== "playing") return;
@@ -984,8 +1080,11 @@ export default function RoomPage() {
       roundNumber: 1,
       usedQuestionIndexes: [random.index],
       currentQuestion: random.question,
+      roundGameType: random.question.type === "flag" || random.question.type === "logo" ? "logo-flag" : random.question.type,
       roundStartedAt: serverTimestamp(),
       roundAnswers: {},
+      extraTime: 0,
+      rematchVotes: {},
       phase: "question",
       revealStartedAt: null,
     });
@@ -1019,6 +1118,17 @@ export default function RoomPage() {
     }
     const correct = isPartyCorrectAnswer(answer, room.currentQuestion);
     if (!correct) {
+      if (room.players?.[uid]?.shieldActive) {
+        await update(ref(db, `rooms/${roomCode}`), {
+          [`players/${uid}/shieldActive`]: false,
+          [`players/${uid}/typing`]: false,
+        });
+        setAnswer("");
+        setFeedback({ text: "Shield blocked that wrong answer 🛡️", ok: true });
+        setTimeout(() => answerInputRef.current?.focus(), 80);
+        return;
+      }
+
       playSound("wrong");
 
       await update(ref(db, `rooms/${roomCode}`), {
@@ -1045,12 +1155,13 @@ export default function RoomPage() {
     const serverNow = Date.now() + serverOffset;
     const elapsedMs = Math.max(0, serverNow - (room.roundStartedAt || serverNow));
     const elapsed = Math.floor(elapsedMs / 1000);
-    const remaining = Math.max((room.timerSeconds || TIMER_SECONDS) - elapsed, 0);
+    const remaining = Math.max(((room.timerSeconds || TIMER_SECONDS) + (room.extraTime || 0)) - elapsed, 0);
     const basePoints = Math.max(1, remaining);
     const currentStreak = room.players?.[uid]?.streak || 0;
     const newStreak = currentStreak + 1;
     const streakBonus = newStreak >= 3 ? Math.min(10, newStreak * 2) : 0;
-    const earnedPoints = basePoints + streakBonus;
+    const multiplier = room.players?.[uid]?.doubleNext ? 2 : 1;
+    const earnedPoints = (basePoints + streakBonus) * multiplier;
     const totalPlayers = Object.keys(room.players || {}).length;
     const alreadyCorrectCount = Object.values(room.roundAnswers?.[questionKey] || {}).filter(
       (result) => result.correct
@@ -1061,6 +1172,7 @@ export default function RoomPage() {
       [`players/${uid}/score`]: currentScore + earnedPoints,
       [`players/${uid}/streak`]: newStreak,
       [`players/${uid}/bestStreak`]: Math.max(room.players?.[uid]?.bestStreak || 0, newStreak),
+      [`players/${uid}/doubleNext`]: false,
       [`players/${uid}/typing`]: false,
       [`players/${uid}/history/${questionKey}`]: {
         round: room.roundNumber || 1,
@@ -1085,7 +1197,14 @@ export default function RoomPage() {
     await update(ref(db, `rooms/${roomCode}`), updates);
 
     playSound("correct");
-    setFeedback({ text: streakBonus > 0 ? `+${earnedPoints} pts! 🔥 ${newStreak} streak` : `+${earnedPoints} pts! ⚡`, ok: true });
+    setFeedback({
+      text: multiplier > 1
+        ? `+${earnedPoints} pts! ⚡ Double points`
+        : streakBonus > 0
+          ? `+${earnedPoints} pts! 🔥 ${newStreak} streak`
+          : `+${earnedPoints} pts! ⚡`,
+      ok: true,
+    });
     setAnswer("");
 
     setTimeout(() => {
@@ -1099,7 +1218,7 @@ export default function RoomPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const roundSeconds = room?.timerSeconds || TIMER_SECONDS;
+  const roundSeconds = (room?.timerSeconds || TIMER_SECONDS) + (room?.extraTime || 0);
   const totalRounds = room?.totalRounds || TOTAL_ROUNDS;
   const difficulty = room?.difficulty || "all";
 
@@ -1175,6 +1294,29 @@ export default function RoomPage() {
       return bAccuracy - aAccuracy;
     })[0];
 
+
+  const amPlayer = Boolean(uid && room.players?.[uid]);
+  const isSpectator = room.status === "playing" && !amPlayer;
+  const rematchCount = Object.keys(room.rematchVotes || {}).length;
+  const rematchNeeded = Math.ceil(Math.max(1, Object.keys(room.players || {}).length) / 2);
+
+  function getGameFinalTitle() {
+    if (room.gameType === "typing") return "Typing Champion";
+    if (room.gameType === "emoji") return "Emoji Master";
+    if (room.gameType === "trivia") return "Trivia Genius";
+    if (room.gameType === "odd-one-out") return "Pattern Hunter";
+    if (room.gameType === "would-you-rather") return "Majority Mindreader";
+    if (room.gameType === "this-or-that") return "Prediction King";
+    if (room.gameType === "party-mix") return "Party Mix Winner";
+    return "Rush Champion";
+  }
+
+  function getQuestionCategoryLabel() {
+    if (!room.currentQuestion) return "Lobby";
+    if (room.gameType === "party-mix") return `${getQuestionLabel(room.currentQuestion)} • Party Mix`;
+    return getQuestionLabel(room.currentQuestion);
+  }
+
   const gameStats = {
     fastestAnswer,
     bestStreakPlayer,
@@ -1191,6 +1333,10 @@ export default function RoomPage() {
     if ((player.bestStreak || 0) >= 5) achievements.push("🔥 On Fire");
     if (correctCount >= 10) achievements.push("🏆 Master");
     if (player.score >= 100) achievements.push("💎 Century Club");
+    if (history.length > 0 && history.every((item) => item.correct)) achievements.push("🎯 No Misses");
+    if (history.some((item) => item.correct && item.speed <= 2)) achievements.push("⏳ Last Second Save");
+    if (room.gameType === "typing" && correctCount >= 5) achievements.push("⌨️ Typing Beast");
+    if (room.gameType === "would-you-rather" || room.gameType === "this-or-that") achievements.push("🔮 Predictor");
 
     return achievements;
   }
@@ -1413,6 +1559,42 @@ export default function RoomPage() {
 
         /* Image box */
 
+
+
+        .lobby-game-switch{margin:16px 0;padding:14px;border-radius:18px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.10)}
+        .game-switch-btn.active{border-color:rgba(56,217,255,.8);background:rgba(56,217,255,.14)}
+        .spectator-card{text-align:center;margin-bottom:16px}
+        .spectator-pill{display:inline-flex;margin-top:12px;border-radius:999px;padding:8px 14px;background:rgba(56,217,255,.10);border:1px solid rgba(56,217,255,.22);font-weight:900;color:var(--accent)}
+        .round-preview{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0 4px;padding:13px 15px;border-radius:16px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.10)}
+        .round-preview-kicker{display:block;font-size:10px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.14em;margin-bottom:4px}
+        .round-preview strong{font-family:'Syne',sans-serif;font-size:15px;color:var(--text)}
+        .round-preview-meta{font-size:12px;color:var(--accent);font-weight:900;white-space:nowrap}
+        .powerup-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0 12px}
+        .powerup-btn{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.065);color:var(--text);border-radius:14px;padding:10px 8px;font-weight:900;cursor:pointer;transition:transform .15s ease,border-color .15s ease,background .15s ease}
+        .powerup-btn:hover:not(:disabled){transform:translateY(-2px);border-color:rgba(56,217,255,.52);background:rgba(56,217,255,.10)}
+        .powerup-btn:disabled{opacity:.38;cursor:not-allowed}
+        .all-achievements{margin-top:20px;padding:15px;border-radius:18px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.10)}
+        .award-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+        .award-row:last-child{border-bottom:none}
+        .award-row span{color:var(--accent2);font-weight:900;text-align:right}
+        .rematch-box{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:14px;border-radius:16px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.18)}
+        .rematch-box span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+        @media(max-width:720px){
+          .page-layout{padding:10px;gap:10px}
+          .card,.card-elevated{padding:16px;border-radius:22px}
+          .room-header{align-items:flex-start;gap:12px}
+          .btn-row{gap:6px}
+          .btn{padding:9px 12px;font-size:12px}
+          .powerup-bar{grid-template-columns:repeat(2,minmax(0,1fr))}
+          .option-grid{grid-template-columns:1fr}
+          .answer-row{position:sticky;bottom:8px;z-index:8;background:rgba(5,7,22,.82);backdrop-filter:blur(10px);padding:8px;border-radius:18px;border:1px solid rgba(255,255,255,.09)}
+          .leaderboard-card{max-height:260px;overflow:auto}
+          .points-card{display:none}
+          .emoji-prompt{font-size:48px}
+          .party-prompt{font-size:20px}
+          .game-switch-grid{grid-template-columns:1fr}
+          .round-preview{flex-direction:column;align-items:flex-start}
+        }
 
         .game-switcher{
           margin-top:22px;
@@ -1802,13 +1984,15 @@ export default function RoomPage() {
                 <div className="room-title">{getGameLabel(room.gameType)}</div>
                 <div className="room-code-badge">{roomCode}</div>
                 <div className="room-mode-badge">
-                  {room.gameType === "logo-flag"
-                    ? room.gameMode === "flags"
-                      ? "🌍 Flags only"
-                      : room.gameMode === "logos"
-                      ? "🏷️ Logos only"
-                      : "🎲 Mixed logos + flags"
-                    : getGameLabel(room.gameType)}
+                  {room.gameType === "party-mix"
+                    ? "🎉 Random game every round"
+                    : room.gameType === "logo-flag"
+                      ? room.gameMode === "flags"
+                        ? "🌍 Flags only"
+                        : room.gameMode === "logos"
+                        ? "🏷️ Logos only"
+                        : "🎲 Mixed logos + flags"
+                      : getGameLabel(room.gameType)}
                 </div>
               </div>
               <div className="btn-row">
@@ -1875,7 +2059,7 @@ export default function RoomPage() {
               <div className="game-switcher compact-switcher">
                 <div className="sidebar-title">Change game — same room</div>
                 <div className="game-switch-grid">
-                  {(["logo-flag", "emoji", "typing", "would-you-rather", "trivia", "odd-one-out", "this-or-that"] as PartyGameType[]).map((game) => (
+                  {(["logo-flag", "party-mix", "emoji", "typing", "would-you-rather", "trivia", "odd-one-out", "this-or-that"] as PartyGameType[]).map((game) => (
                     <button
                       key={game}
                       className="game-switch-btn"
@@ -1893,7 +2077,26 @@ export default function RoomPage() {
           {room.status !== "playing" && room.status !== "ended" && (
             <div className="card-elevated lobby-wrap">
               <div className="lobby-title">Waiting Room</div>
-              <div className="lobby-sub">Enter your name, then join the game.</div>
+              <div className="lobby-sub">
+                {getGameLabel(room.gameType)} • {Object.keys(room.players || {}).length} player{Object.keys(room.players || {}).length === 1 ? "" : "s"} joined
+              </div>
+
+              {isHost && (
+                <div className="lobby-game-switch">
+                  <div className="sidebar-title">Host game picker</div>
+                  <div className="game-switch-grid">
+                    {(["logo-flag", "party-mix", "emoji", "typing", "would-you-rather", "trivia", "odd-one-out", "this-or-that"] as PartyGameType[]).map((game) => (
+                      <button
+                        key={game}
+                        className={`game-switch-btn ${room.gameType === game ? "active" : ""}`}
+                        onClick={() => setLobbyGame(game)}
+                      >
+                        {getGameLabel(game)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <input
                 className="join-input"
@@ -1941,6 +2144,17 @@ export default function RoomPage() {
             </div>
           )}
 
+
+          {isSpectator && (
+            <div className="card-elevated spectator-card">
+              <div className="lobby-title">Spectator Mode</div>
+              <div className="lobby-sub">
+                A game is already running. You can watch this round and join when the next game starts.
+              </div>
+              <div className="spectator-pill">👀 Watching live</div>
+            </div>
+          )}
+
           {/* ── PLAYING ── */}
           {room.status === "playing" && room.currentQuestion && (
             <div className="card-elevated" style={{ animation:"fadeUp 0.35s ease" }}>
@@ -1965,6 +2179,17 @@ export default function RoomPage() {
                     </svg>
                     <div className="timer-number" style={{ color:timerColor }}>{timeLeft}</div>
                   </div>
+                </div>
+              </div>
+
+
+              <div className="round-preview">
+                <div>
+                  <span className="round-preview-kicker">Round {room.roundNumber} of {totalRounds}</span>
+                  <strong>{getQuestionCategoryLabel()}</strong>
+                </div>
+                <div className="round-preview-meta">
+                  {difficulty !== "all" ? `${String(difficulty).toUpperCase()} • ` : ""}{roundSeconds}s timer
                 </div>
               </div>
 
@@ -2037,7 +2262,7 @@ export default function RoomPage() {
                             setFeedback(null);
                             setTimeout(() => answerInputRef.current?.focus(), 50);
                           }}
-                          disabled={isReveal || timeLeft === 0 || !!alreadyAnswered}
+                          disabled={isSpectator || isReveal || timeLeft === 0 || !!alreadyAnswered}
                         >
                           {option}
                         </button>
@@ -2065,7 +2290,7 @@ export default function RoomPage() {
                   value={answer}
                   onChange={(e) => handleAnswerChange(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !alreadyAnswered && !isReveal && submitAnswer()}
-                  disabled={isReveal || timeLeft === 0 || !!alreadyAnswered}
+                  disabled={isSpectator || isReveal || timeLeft === 0 || !!alreadyAnswered}
                   autoFocus
                 />
                 <button
