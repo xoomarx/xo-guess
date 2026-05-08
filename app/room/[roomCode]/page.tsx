@@ -92,7 +92,7 @@ const MIXABLE_GAMES: PartyGameType[] = ["logo-flag", "emoji", "typing", "would-y
 
 
 
-const PARTY_QUESTIONS: Record<Exclude<PartyGameType, "logo-flag">, Question[]> = {
+const PARTY_QUESTIONS: Record<Exclude<PartyGameType, "logo-flag" | "party-mix">, Question[]> = {
   emoji: [
     { type: "emoji", prompt: "🦁👑", answer: "The Lion King", acceptedAnswers: ["The Lion King", "lion king"] },
     { type: "emoji", prompt: "🍔👑", answer: "Burger King", acceptedAnswers: ["Burger King"] },
@@ -515,7 +515,8 @@ function getRandomPartyQuestion(
     return getRandomQuestionByMode(usedIndexes, room?.gameMode || "mix", room?.difficulty || "all") as any;
   }
 
-  const pool = PARTY_QUESTIONS[gameType];
+  const questionGameType = gameType as Exclude<PartyGameType, "logo-flag" | "party-mix">;
+  const pool = PARTY_QUESTIONS[questionGameType];
   const availableIndexes = pool.map((_, index) => index).filter((index) => !usedIndexes.includes(index));
   const finalPool = availableIndexes.length > 0 ? availableIndexes : pool.map((_, index) => index);
   const pickedIndex = finalPool[Math.floor(Math.random() * finalPool.length)];
