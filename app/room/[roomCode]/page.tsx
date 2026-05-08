@@ -991,7 +991,9 @@ export default function RoomPage() {
     }
 
     if (power === "hint") {
-      await update(ref(db, `rooms/${roomCode}/players/${uid}/powerUps/hint`), true);
+      await update(ref(db, `rooms/${roomCode}`), {
+        [`players/${uid}/powerUps/hint`]: true,
+      });
       const answerText = room.currentQuestion?.answer || "";
       const hint = answerText === "A" || answerText === "B"
         ? "Hint: this is a prediction question. Trust the more popular pick."
