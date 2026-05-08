@@ -1024,7 +1024,7 @@ export default function RoomPage() {
     if (!uid || room?.status !== "ended") return;
 
     const nextVotes = {
-      ...(room.rematchVotes || {}),
+      ...(room?.rematchVotes || {}),
       [uid]: true,
     };
 
@@ -1032,7 +1032,7 @@ export default function RoomPage() {
       [`rematchVotes/${uid}`]: true,
     });
 
-    const needed = Math.ceil(Math.max(1, Object.keys(room.players || {}).length) / 2);
+    const needed = Math.ceil(Math.max(1, Object.keys(room?.players || {}).length) / 2);
 
     if (Object.keys(nextVotes).length >= needed) {
       await startGame();
@@ -1165,7 +1165,7 @@ export default function RoomPage() {
     const streakBonus = newStreak >= 3 ? Math.min(10, newStreak * 2) : 0;
     const multiplier = room.players?.[uid]?.doubleNext ? 2 : 1;
     const earnedPoints = (basePoints + streakBonus) * multiplier;
-    const totalPlayers = Object.keys(room.players || {}).length;
+    const totalPlayers = Object.keys(room?.players || {}).length;
     const alreadyCorrectCount = Object.values(room.roundAnswers?.[questionKey] || {}).filter(
       (result) => result.correct
     ).length;
@@ -1300,23 +1300,25 @@ export default function RoomPage() {
 
   const amPlayer = Boolean(uid && room.players?.[uid]);
   const isSpectator = room.status === "playing" && !amPlayer;
-  const rematchCount = Object.keys(room.rematchVotes || {}).length;
-  const rematchNeeded = Math.ceil(Math.max(1, Object.keys(room.players || {}).length) / 2);
+  const rematchCount = Object.keys(room?.rematchVotes || {}).length;
+  const rematchNeeded = Math.ceil(Math.max(1, Object.keys(room?.players || {}).length) / 2);
 
   function getGameFinalTitle() {
-    if (room.gameType === "typing") return "Typing Champion";
-    if (room.gameType === "emoji") return "Emoji Master";
-    if (room.gameType === "trivia") return "Trivia Genius";
-    if (room.gameType === "odd-one-out") return "Pattern Hunter";
-    if (room.gameType === "would-you-rather") return "Majority Mindreader";
-    if (room.gameType === "this-or-that") return "Prediction King";
-    if (room.gameType === "party-mix") return "Party Mix Winner";
+    const gameType = room?.gameType;
+
+    if (gameType === "typing") return "Typing Champion";
+    if (gameType === "emoji") return "Emoji Master";
+    if (gameType === "trivia") return "Trivia Genius";
+    if (gameType === "odd-one-out") return "Pattern Hunter";
+    if (gameType === "would-you-rather") return "Majority Mindreader";
+    if (gameType === "this-or-that") return "Prediction King";
+    if (gameType === "party-mix") return "Party Mix Winner";
     return "Rush Champion";
   }
 
   function getQuestionCategoryLabel() {
-    if (!room.currentQuestion) return "Lobby";
-    if (room.gameType === "party-mix") return `${getQuestionLabel(room.currentQuestion)} • Party Mix`;
+    if (!room?.currentQuestion) return "Lobby";
+    if (room?.gameType === "party-mix") return `${getQuestionLabel(room.currentQuestion)} • Party Mix`;
     return getQuestionLabel(room.currentQuestion);
   }
 
@@ -1338,8 +1340,8 @@ export default function RoomPage() {
     if (player.score >= 100) achievements.push("💎 Century Club");
     if (history.length > 0 && history.every((item) => item.correct)) achievements.push("🎯 No Misses");
     if (history.some((item) => item.correct && item.speed <= 2)) achievements.push("⏳ Last Second Save");
-    if (room.gameType === "typing" && correctCount >= 5) achievements.push("⌨️ Typing Beast");
-    if (room.gameType === "would-you-rather" || room.gameType === "this-or-that") achievements.push("🔮 Predictor");
+    if (room?.gameType === "typing" && correctCount >= 5) achievements.push("⌨️ Typing Beast");
+    if (room?.gameType === "would-you-rather" || room?.gameType === "this-or-that") achievements.push("🔮 Predictor");
 
     return achievements;
   }
@@ -2081,7 +2083,7 @@ export default function RoomPage() {
             <div className="card-elevated lobby-wrap">
               <div className="lobby-title">Waiting Room</div>
               <div className="lobby-sub">
-                {getGameLabel(room.gameType)} • {Object.keys(room.players || {}).length} player{Object.keys(room.players || {}).length === 1 ? "" : "s"} joined
+                {getGameLabel(room.gameType)} • {Object.keys(room?.players || {}).length} player{Object.keys(room?.players || {}).length === 1 ? "" : "s"} joined
               </div>
 
               {isHost && (
