@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { onValue, ref, update, serverTimestamp } from "firebase/database";
+import { onValue, ref, update, serverTimestamp, get } from "firebase/database";
 import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "../../../lib/firebase";
 import { getRandomQuestionByMode, isCorrectAnswer } from "../../../lib/questions";
@@ -90,6 +90,7 @@ type Room = {
   extraTime?: number;
   roundGameType?: PartyGameType;
   rematchVotes?: Record<string, boolean>;
+  password?: string;
 };
 type SoundName = "correct" | "wrong" | "timer" | "gameover";
 
@@ -784,10 +785,15 @@ export default function RoomPage() {
   const [lastPhase, setLastPhase] = useState<string | null>(null);
   const [gameEnded, setGameEnded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordVerified, setPasswordVerified] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
   const answerInputRef = useRef<HTMLInputElement | null>(null);
   const confettiRef = useRef(false);
   const lastTimerSoundSecondRef = useRef<number | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
+  const statsSavedRef = useRef(false);
 
   
   const isHost = Boolean(uid && room?.hostId === uid);
@@ -933,8 +939,34 @@ export default function RoomPage() {
 
     if (room?.status !== "ended") {
       setGameEnded(false);
+      statsSavedRef.current = false;
     }
   }, [room?.status, gameEnded]);
+
+  // Save player stats to global leaderboard when game ends
+  useEffect(() => {
+    if (room?.status !== "ended" || !uid || statsSavedRef.current) return;
+    const myPlayer = room.players?.[uid];
+    if (!myPlayer) return;
+    statsSavedRef.current = true;
+
+    const allPlayers = Object.values(room.players || {}).sort((a, b) => b.score - a.score);
+    const isWinner = allPlayers[0]?.name === myPlayer.name;
+
+    const userRef = ref(db, `users/${uid}`);
+    get(userRef).then((snapshot) => {
+      const existing = snapshot.exists() ? snapshot.val() : {};
+      update(ref(db, `users/${uid}`), {
+        name: myPlayer.name,
+        totalScore: (existing.totalScore || 0) + myPlayer.score,
+        gamesPlayed: (existing.gamesPlayed || 0) + 1,
+        wins: (existing.wins || 0) + (isWinner ? 1 : 0),
+        bestScore: Math.max(existing.bestScore || 0, myPlayer.score),
+        bestStreak: Math.max(existing.bestStreak || 0, myPlayer.bestStreak || 0),
+        lastSeen: Date.now(),
+      });
+    });
+  }, [room?.status, uid]);
 
   useEffect(() => {
     if (!room?.players) return;
@@ -1223,6 +1255,36 @@ export default function RoomPage() {
     setAnswer("");
     setFeedback(null);
     lastTimerSoundSecondRef.current = null;
+  }
+
+  function verifyPassword() {
+    if (!room?.password) { setPasswordVerified(true); return; }
+    if (passwordInput.trim() === room.password.trim()) {
+      setPasswordVerified(true);
+      setPasswordError("");
+    } else {
+      setPasswordError("Wrong password. Ask the host.");
+    }
+  }
+
+  function shareResult() {
+    if (!uid || !room) return;
+    const myScore = room.players?.[uid]?.score || 0;
+    const allPlayers = Object.values(room.players || {}).sort((a, b) => b.score - a.score);
+    const isWinner = allPlayers[0]?.name === room.players?.[uid]?.name;
+    const gameName = getGameLabel(room.gameType);
+    const text = isWinner
+      ? `🏆 I won ${gameName} with ${myScore} pts on XO Guess! Can you beat me?\n🎮 Play free → xo-guess.vercel.app`
+      : `🎮 I scored ${myScore} pts in ${gameName} on XO Guess! Try to beat me!\n👉 Play free → xo-guess.vercel.app`;
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({ title: "XO Guess Results", text }).catch(() => {});
+    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2500);
+      });
+    }
   }
 
   async function sendReaction(emoji: string) {
@@ -2236,7 +2298,7 @@ export default function RoomPage() {
               <div className="game-switcher compact-switcher">
                 <div className="sidebar-title">Change game — same room</div>
                 <div className="game-switch-grid">
-                  {(["logo-flag", "party-mix", "emoji", "typing", "would-you-rather", "trivia", "odd-one-out", "this-or-that"] as PartyGameType[]).map((game) => (
+                  {(["logo-flag", "party-mix", "emoji", "typing", "would-you-rather", "trivia", "odd-one-out", "this-or-that", "math-rush", "true-or-false", "fill-blank"] as PartyGameType[]).map((game) => (
                     <button
                       key={game}
                       className="game-switch-btn"
@@ -2262,7 +2324,7 @@ export default function RoomPage() {
                 <div className="lobby-game-switch">
                   <div className="sidebar-title">Host game picker</div>
                   <div className="game-switch-grid">
-                    {(["logo-flag", "party-mix", "emoji", "typing", "would-you-rather", "trivia", "odd-one-out", "this-or-that"] as PartyGameType[]).map((game) => (
+                    {(["logo-flag", "party-mix", "emoji", "typing", "would-you-rather", "trivia", "odd-one-out", "this-or-that", "math-rush", "true-or-false", "fill-blank"] as PartyGameType[]).map((game) => (
                       <button
                         key={game}
                         className={`game-switch-btn ${room.gameType === game ? "active" : ""}`}
@@ -2275,6 +2337,28 @@ export default function RoomPage() {
                 </div>
               )}
 
+              {/* Password gate */}
+              {room.password && !room.players?.[uid] && !passwordVerified && (
+                <div style={{ marginBottom:16, padding:"16px 18px", borderRadius:16, background:"rgba(167,139,250,0.08)", border:"1px solid rgba(167,139,250,0.22)" }}>
+                  <div style={{ fontSize:13, fontWeight:800, marginBottom:4 }}>🔒 Private Room — Password Required</div>
+                  <div style={{ fontSize:12, color:"var(--muted)", marginBottom:12 }}>Ask the host for the room password.</div>
+                  <div style={{ display:"flex", gap:8 }}>
+                    <input
+                      className="join-input"
+                      style={{ flex:1, marginBottom:0 }}
+                      type="text"
+                      placeholder="Enter password…"
+                      value={passwordInput}
+                      onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(""); }}
+                      onKeyDown={(e) => e.key === "Enter" && verifyPassword()}
+                    />
+                    <button className="btn btn-primary" onClick={verifyPassword}>Unlock</button>
+                  </div>
+                  {passwordError && <div style={{ color:"var(--danger)", fontSize:12, marginTop:8 }}>{passwordError}</div>}
+                </div>
+              )}
+
+              {(!room.password || passwordVerified || room.players?.[uid]) && (<>
               <input
                 className="join-input"
                 placeholder="Your name…"
@@ -2318,6 +2402,7 @@ export default function RoomPage() {
                 <span className="dot-pulse" />
                 {players.length} player{players.length !== 1 ? "s" : ""} in lobby
               </div>
+              </>)}
             </div>
           )}
 
@@ -2649,6 +2734,23 @@ export default function RoomPage() {
                   ))}
                 </div>
               )}
+
+              {/* ── Share results ── */}
+              <div style={{ display:"flex", gap:8, marginTop:16, flexWrap:"wrap" }}>
+                <button
+                  className="btn btn-ghost"
+                  style={{ flex:1, padding:"12px 16px", fontSize:13, fontWeight:800, borderRadius:14, background:"rgba(56,217,255,0.08)", borderColor:"rgba(56,217,255,0.22)", color:"var(--accent)" }}
+                  onClick={shareResult}
+                >
+                  {shareCopied ? "✓ Copied to clipboard!" : "📤 Share my result"}
+                </button>
+                <a
+                  href="/leaderboard"
+                  style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:"12px 16px", borderRadius:14, border:"1px solid rgba(250,204,21,0.22)", background:"rgba(250,204,21,0.07)", color:"#facc15", fontSize:13, fontWeight:800, textDecoration:"none", whiteSpace:"nowrap" }}
+                >
+                  🏆 Leaderboard
+                </a>
+              </div>
 
               {/* ── Rematch voting ── */}
               <div className="rematch-box">

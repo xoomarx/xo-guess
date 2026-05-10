@@ -1,0 +1,19 @@
+{
+  "name": "XO Guess — Multiplayer Party Games",
+  "short_name": "XO Guess",
+  "description": "Play free multiplayer party games with friends. No download needed.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#03050f",
+  "theme_color": "#38d9ff",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "lang": "en"
+}

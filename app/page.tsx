@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ref, set, get } from "firebase/database";
-import { signInAnonymously } from "firebase/auth";
-import { auth, db } from "../lib/firebase";
+import { signInAnonymously, signInWithPopup } from "firebase/auth";
+import { auth, db, googleProvider } from "../lib/firebase";
 import type { GameMode, Difficulty } from "../lib/questions";
 
 function createRoomCode() {
@@ -46,11 +46,39 @@ export default function Home() {
   const [timerSeconds, setTimerSeconds] = useState(15);
   const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
   const [customCode, setCustomCode] = useState("");
+  const [roomPassword, setRoomPassword] = useState("");
+  const [joinPassword, setJoinPassword] = useState("");
+  const [recentRooms, setRecentRooms] = useState<{ code: string; game: string }[]>([]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("recentRooms");
+    if (stored) setRecentRooms(JSON.parse(stored));
+    const savedName = localStorage.getItem("name");
+    if (savedName) setName(savedName);
+  }, []);
 
   async function getOrSignIn() {
     if (auth.currentUser) return auth.currentUser;
     const result = await signInAnonymously(auth);
     return result.user;
+  }
+
+  async function signInWithGoogle() {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result.user.displayName) setName(result.user.displayName.split(" ")[0]);
+      return result.user;
+    } catch {
+      const result = await signInAnonymously(auth);
+      return result.user;
+    }
+  }
+
+  function saveRecentRoom(code: string, game: string) {
+    const existing: { code: string; game: string }[] = JSON.parse(localStorage.getItem("recentRooms") || "[]");
+    const updated = [{ code, game }, ...existing.filter((r) => r.code !== code)].slice(0, 5);
+    localStorage.setItem("recentRooms", JSON.stringify(updated));
+    setRecentRooms(updated);
   }
 
   async function createRoom() {
@@ -78,9 +106,11 @@ export default function Home() {
       timerSeconds,
       difficulty,
       questionIndex: 0,
+      password: roomPassword.trim() || null,
       players: { [user.uid]: { name: name.trim(), score: 0 } },
     });
     localStorage.setItem("name", name.trim());
+    saveRecentRoom(roomCode, gameType);
     router.push(`/room/${roomCode}`);
   }
 
@@ -141,8 +171,17 @@ export default function Home() {
       setLoading(false);
       return;
     }
+    const roomData = snapshot.val();
+    if (roomData.password) {
+      if (!joinPassword.trim() || joinPassword.trim() !== roomData.password) {
+        setJoinError("Wrong password. Ask the host for the room password.");
+        setLoading(false);
+        return;
+      }
+    }
     await getOrSignIn();
     localStorage.setItem("name", name.trim());
+    saveRecentRoom(code, roomData.gameType || "logo-flag");
     router.push(`/room/${code}`);
   }
 
@@ -497,6 +536,32 @@ export default function Home() {
         /* ── Divider ── */
         .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 
+        /* ── Google sign-in button ── */
+        .google-btn {
+          display: inline-flex; align-items: center; gap: 5px;
+          padding: 4px 10px; border-radius: 8px;
+          border: 1px solid rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.06);
+          color: var(--muted); font-size: 11px; font-weight: 700;
+          cursor: pointer; transition: all 0.17s ease;
+        }
+        .google-btn:hover { background: rgba(255,255,255,0.10); color: var(--text); border-color: rgba(255,255,255,0.20); }
+
+        /* ── Footer ── */
+        .site-footer {
+          position: relative; z-index: 1;
+          padding: 20px;
+          display: flex; align-items: center; justify-content: center; gap: 20px;
+          border-top: 1px solid var(--border);
+          flex-wrap: wrap;
+        }
+        .footer-link {
+          color: var(--muted); font-size: 12px; font-weight: 600; text-decoration: none;
+          transition: color 0.15s;
+        }
+        .footer-link:hover { color: var(--text); }
+        .footer-sep { color: var(--border); font-size: 12px; }
+
         /* ── Feature strip ── */
         .feat-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }
         .feat-item {
@@ -533,11 +598,11 @@ export default function Home() {
             </h1>
 
             <p className="hero-desc">
-              8 game modes, live multiplayer, real-time leaderboards. Pick a game, share the code, and race your friends to the top.
+              11 game modes, real-time multiplayer, global leaderboard. No account needed — create a room in seconds and share the code with friends.
             </p>
 
             <div className="hero-features">
-              {["🌍 150+ flags", "🏷️ 100+ logos", "⚡ Speed scoring", "🔥 Streak bonuses", "🛡️ Power-ups", "🏆 Daily challenges"].map(p => (
+              {["🌍 150+ flags", "🏷️ 100+ logos", "⚡ Speed scoring", "🔥 Streaks", "🛡️ Power-ups", "🏆 Leaderboard", "🔢 Math Rush", "✅ True/False"].map(p => (
                 <span key={p} className="hero-pill">{p}</span>
               ))}
             </div>
@@ -625,6 +690,19 @@ export default function Home() {
                     maxLength={8}
                   />
                 </div>
+
+                {/* Room password */}
+                <div className="custom-wrap" style={{ marginBottom: 0 }}>
+                  <span className="sec-label">Room password (optional — private rooms only)</span>
+                  <input
+                    className="txt-input"
+                    type="text"
+                    placeholder="Leave blank for public room"
+                    value={roomPassword}
+                    onChange={e => setRoomPassword(e.target.value)}
+                    maxLength={20}
+                  />
+                </div>
               </>
             )}
 
@@ -642,7 +720,18 @@ export default function Home() {
             {tab === "create" && (
               <div key="create">
                 <div className="form-field">
-                  <label className="field-lbl">Your name</label>
+                  <label className="field-lbl" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <span>Your name</span>
+                    <button type="button" className="google-btn" onClick={signInWithGoogle}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink:0 }}>
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                      </svg>
+                      Sign in with Google
+                    </button>
+                  </label>
                   <input
                     className="txt-input"
                     placeholder="Enter your name…"
@@ -666,8 +755,37 @@ export default function Home() {
             {/* Join form */}
             {tab === "join" && (
               <div key="join">
+                {recentRooms.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <span className="sec-label">Recent rooms</span>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                      {recentRooms.map(r => (
+                        <button
+                          key={r.code}
+                          type="button"
+                          className="quick-btn"
+                          style={{ fontSize:11 }}
+                          onClick={() => { setJoinCode(r.code); setJoinError(""); }}
+                        >
+                          {r.code}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="form-field">
-                  <label className="field-lbl">Your name</label>
+                  <label className="field-lbl" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <span>Your name</span>
+                    <button type="button" className="google-btn" onClick={signInWithGoogle}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink:0 }}>
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                      </svg>
+                      Sign in with Google
+                    </button>
+                  </label>
                   <input
                     className="txt-input"
                     placeholder="Enter your name…"
@@ -685,6 +803,17 @@ export default function Home() {
                     onChange={e => { setJoinCode(e.target.value.toUpperCase()); setJoinError(""); }}
                     onKeyDown={e => e.key === "Enter" && !loading && name.trim() && joinCode.trim() && joinRoom()}
                     maxLength={8}
+                  />
+                </div>
+                <div className="form-field">
+                  <label className="field-lbl">Room password (if required)</label>
+                  <input
+                    className="txt-input"
+                    type="text"
+                    placeholder="Leave blank if no password"
+                    value={joinPassword}
+                    onChange={e => { setJoinPassword(e.target.value); setJoinError(""); }}
+                    maxLength={20}
                   />
                 </div>
                 {joinError && <div className="err-msg">⚠ {joinError}</div>}
@@ -714,6 +843,17 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="site-footer">
+        <a href="/leaderboard" className="footer-link">🏆 Leaderboard</a>
+        <span className="footer-sep">·</span>
+        <a href="/privacy" className="footer-link">Privacy Policy</a>
+        <span className="footer-sep">·</span>
+        <a href="/tos" className="footer-link">Terms of Service</a>
+        <span className="footer-sep">·</span>
+        <span className="footer-link" style={{ cursor:"default" }}>© 2025 XO Guess</span>
+      </footer>
     </>
   );
 }
