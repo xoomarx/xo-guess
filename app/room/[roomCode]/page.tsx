@@ -43,7 +43,10 @@ type PartyGameType =
   | "would-you-rather"
   | "trivia"
   | "odd-one-out"
-  | "this-or-that";
+  | "this-or-that"
+  | "math-rush"
+  | "true-or-false"
+  | "fill-blank";
 
 type Question = {
   type:
@@ -54,7 +57,10 @@ type Question = {
     | "would-you-rather"
     | "trivia"
     | "odd-one-out"
-    | "this-or-that";
+    | "this-or-that"
+    | "math-rush"
+    | "true-or-false"
+    | "fill-blank";
   imageUrl?: string;
   fallbackUrl?: string;
   prompt?: string;
@@ -87,7 +93,7 @@ type Room = {
 };
 type SoundName = "correct" | "wrong" | "timer" | "gameover";
 
-const MIXABLE_GAMES: PartyGameType[] = ["logo-flag", "emoji", "typing", "would-you-rather", "trivia", "odd-one-out", "this-or-that"];
+const MIXABLE_GAMES: PartyGameType[] = ["logo-flag", "emoji", "typing", "would-you-rather", "trivia", "odd-one-out", "this-or-that", "math-rush", "true-or-false", "fill-blank"];
 
 
 
@@ -432,6 +438,122 @@ const PARTY_QUESTIONS: Record<Exclude<PartyGameType, "logo-flag" | "party-mix">,
     { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Sneakers", "B) Crocs"], answer: "A", acceptedAnswers: ["A", "a", "Sneakers"] },
     { type: "this-or-that", prompt: "Prediction mode: pick the more popular choice.", options: ["A) Chips", "B) Chocolate"], answer: "B", acceptedAnswers: ["B", "b", "Chocolate"] },
   ],
+  "math-rush": [
+    { type: "math-rush", prompt: "7 × 8 = ?", answer: "56", acceptedAnswers: ["56"] },
+    { type: "math-rush", prompt: "144 ÷ 12 = ?", answer: "12", acceptedAnswers: ["12"] },
+    { type: "math-rush", prompt: "25 + 37 = ?", answer: "62", acceptedAnswers: ["62"] },
+    { type: "math-rush", prompt: "100 − 43 = ?", answer: "57", acceptedAnswers: ["57"] },
+    { type: "math-rush", prompt: "9 × 9 = ?", answer: "81", acceptedAnswers: ["81"] },
+    { type: "math-rush", prompt: "√81 = ?", answer: "9", acceptedAnswers: ["9"] },
+    { type: "math-rush", prompt: "3³ = ?", answer: "27", acceptedAnswers: ["27"] },
+    { type: "math-rush", prompt: "60 ÷ 4 = ?", answer: "15", acceptedAnswers: ["15"] },
+    { type: "math-rush", prompt: "13 × 4 = ?", answer: "52", acceptedAnswers: ["52"] },
+    { type: "math-rush", prompt: "15% of 200 = ?", answer: "30", acceptedAnswers: ["30"] },
+    { type: "math-rush", prompt: "½ of 74 = ?", answer: "37", acceptedAnswers: ["37"] },
+    { type: "math-rush", prompt: "6 × 7 = ?", answer: "42", acceptedAnswers: ["42"] },
+    { type: "math-rush", prompt: "121 ÷ 11 = ?", answer: "11", acceptedAnswers: ["11"] },
+    { type: "math-rush", prompt: "8² = ?", answer: "64", acceptedAnswers: ["64"] },
+    { type: "math-rush", prompt: "1000 − 337 = ?", answer: "663", acceptedAnswers: ["663"] },
+    { type: "math-rush", prompt: "50 × 6 = ?", answer: "300", acceptedAnswers: ["300"] },
+    { type: "math-rush", prompt: "√144 = ?", answer: "12", acceptedAnswers: ["12"] },
+    { type: "math-rush", prompt: "17 + 28 = ?", answer: "45", acceptedAnswers: ["45"] },
+    { type: "math-rush", prompt: "72 ÷ 8 = ?", answer: "9", acceptedAnswers: ["9"] },
+    { type: "math-rush", prompt: "99 + 99 = ?", answer: "198", acceptedAnswers: ["198"] },
+    { type: "math-rush", prompt: "200 ÷ 25 = ?", answer: "8", acceptedAnswers: ["8"] },
+    { type: "math-rush", prompt: "11 × 11 = ?", answer: "121", acceptedAnswers: ["121"] },
+    { type: "math-rush", prompt: "¾ of 120 = ?", answer: "90", acceptedAnswers: ["90"] },
+    { type: "math-rush", prompt: "√225 = ?", answer: "15", acceptedAnswers: ["15"] },
+    { type: "math-rush", prompt: "7 × 12 = ?", answer: "84", acceptedAnswers: ["84"] },
+    { type: "math-rush", prompt: "250 ÷ 5 = ?", answer: "50", acceptedAnswers: ["50"] },
+    { type: "math-rush", prompt: "14 × 3 = ?", answer: "42", acceptedAnswers: ["42"] },
+    { type: "math-rush", prompt: "500 − 167 = ?", answer: "333", acceptedAnswers: ["333"] },
+    { type: "math-rush", prompt: "9 × 6 = ?", answer: "54", acceptedAnswers: ["54"] },
+    { type: "math-rush", prompt: "36 ÷ 4 = ?", answer: "9", acceptedAnswers: ["9"] },
+    { type: "math-rush", prompt: "20% of 150 = ?", answer: "30", acceptedAnswers: ["30"] },
+    { type: "math-rush", prompt: "12 × 12 = ?", answer: "144", acceptedAnswers: ["144"] },
+    { type: "math-rush", prompt: "48 ÷ 6 = ?", answer: "8", acceptedAnswers: ["8"] },
+    { type: "math-rush", prompt: "33 + 48 = ?", answer: "81", acceptedAnswers: ["81"] },
+    { type: "math-rush", prompt: "5 × 5 × 5 = ?", answer: "125", acceptedAnswers: ["125"] },
+    { type: "math-rush", prompt: "10% of 540 = ?", answer: "54", acceptedAnswers: ["54"] },
+    { type: "math-rush", prompt: "√49 = ?", answer: "7", acceptedAnswers: ["7"] },
+    { type: "math-rush", prompt: "16 × 4 = ?", answer: "64", acceptedAnswers: ["64"] },
+    { type: "math-rush", prompt: "75 + 75 = ?", answer: "150", acceptedAnswers: ["150"] },
+    { type: "math-rush", prompt: "4² + 3² = ?", answer: "25", acceptedAnswers: ["25"] },
+  ],
+  "true-or-false": [
+    { type: "true-or-false", prompt: "The Great Wall of China is visible from space.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "Lightning never strikes the same place twice.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "The Eiffel Tower is in Paris, France.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "Sharks are mammals.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "The sun is a star.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "Humans have 206 bones.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "A day on Venus is shorter than a year on Venus.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "The Amazon River is longer than the Nile.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "Water boils at 100°C at sea level.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "Antarctica is a desert.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "Napoleon Bonaparte was very short for his time.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "Bats are blind.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "Diamonds are made of carbon.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "The capital of Australia is Sydney.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "Goldfish have a memory of only 3 seconds.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "HTML is a programming language.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "A group of crows is called a murder.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "Mount Everest is the tallest mountain on Earth.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "The moon has its own light source.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "Penguins live in the Arctic.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "The human brain uses more energy than any other organ.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "Pluto is still classified as a planet.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "Crocodiles are more closely related to birds than to lizards.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "Glass is made from sand.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "The first iPhone was released in 2010.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "Oxygen is the most abundant gas in Earth's atmosphere.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "A kilogram of feathers weighs the same as a kilogram of gold.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "Tomatoes are technically a fruit.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "The Pacific Ocean is the smallest ocean.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "Elephants are the only animals that can't jump.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "The speed of light is faster than the speed of sound.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "Chess was invented in China.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "The human body has more bacteria than human cells.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+    { type: "true-or-false", prompt: "A leap year occurs every 4 years without exception.", options: ["True", "False"], answer: "False", acceptedAnswers: ["False", "false", "B", "b"] },
+    { type: "true-or-false", prompt: "The chemical symbol for water is H2O.", options: ["True", "False"], answer: "True", acceptedAnswers: ["True", "true", "A", "a"] },
+  ],
+  "fill-blank": [
+    { type: "fill-blank", prompt: "The capital of France is ___.", answer: "Paris", acceptedAnswers: ["Paris", "paris"] },
+    { type: "fill-blank", prompt: "___ is the largest planet in our solar system.", answer: "Jupiter", acceptedAnswers: ["Jupiter", "jupiter"] },
+    { type: "fill-blank", prompt: "The chemical symbol for gold is ___.", answer: "Au", acceptedAnswers: ["Au", "au"] },
+    { type: "fill-blank", prompt: "Water freezes at ___ degrees Celsius.", answer: "0", acceptedAnswers: ["0", "zero"] },
+    { type: "fill-blank", prompt: "The famous painting 'Starry Night' was made by ___.", answer: "Van Gogh", acceptedAnswers: ["Van Gogh", "van gogh", "Vincent van Gogh"] },
+    { type: "fill-blank", prompt: "The currency of Japan is the ___.", answer: "Yen", acceptedAnswers: ["Yen", "yen"] },
+    { type: "fill-blank", prompt: "___ is the fastest land animal.", answer: "Cheetah", acceptedAnswers: ["Cheetah", "cheetah"] },
+    { type: "fill-blank", prompt: "A year on Earth has ___ days.", answer: "365", acceptedAnswers: ["365", "three hundred sixty five"] },
+    { type: "fill-blank", prompt: "The creator of Mickey Mouse is ___.", answer: "Walt Disney", acceptedAnswers: ["Walt Disney", "walt disney", "Disney"] },
+    { type: "fill-blank", prompt: "The country with the longest coastline is ___.", answer: "Canada", acceptedAnswers: ["Canada", "canada"] },
+    { type: "fill-blank", prompt: "'To be or not to be' was said by ___.", answer: "Hamlet", acceptedAnswers: ["Hamlet", "hamlet", "Shakespeare"] },
+    { type: "fill-blank", prompt: "The ___ is the largest ocean on Earth.", answer: "Pacific", acceptedAnswers: ["Pacific", "pacific", "Pacific Ocean"] },
+    { type: "fill-blank", prompt: "E=mc² is Einstein's ___ of relativity.", answer: "theory", acceptedAnswers: ["theory", "Theory"] },
+    { type: "fill-blank", prompt: "The app ___ is known for its ghost logo.", answer: "Snapchat", acceptedAnswers: ["Snapchat", "snapchat"] },
+    { type: "fill-blank", prompt: "The tallest structure in the world is the ___ in Dubai.", answer: "Burj Khalifa", acceptedAnswers: ["Burj Khalifa", "burj khalifa"] },
+    { type: "fill-blank", prompt: "In the periodic table, 'Fe' is the symbol for ___.", answer: "Iron", acceptedAnswers: ["Iron", "iron"] },
+    { type: "fill-blank", prompt: "The game Minecraft was created by ___.", answer: "Notch", acceptedAnswers: ["Notch", "notch", "Markus Persson"] },
+    { type: "fill-blank", prompt: "The ___ Sea is between Europe and Africa.", answer: "Mediterranean", acceptedAnswers: ["Mediterranean", "mediterranean"] },
+    { type: "fill-blank", prompt: "A hexagon has ___ sides.", answer: "6", acceptedAnswers: ["6", "six"] },
+    { type: "fill-blank", prompt: "The mascot of Android is a ___.", answer: "robot", acceptedAnswers: ["robot", "Robot", "android robot"] },
+    { type: "fill-blank", prompt: "Spider-Man's real name is Peter ___.", answer: "Parker", acceptedAnswers: ["Parker", "parker"] },
+    { type: "fill-blank", prompt: "The ___ is the largest country in the world by area.", answer: "Russia", acceptedAnswers: ["Russia", "russia"] },
+    { type: "fill-blank", prompt: "The language most spoken natively in Brazil is ___.", answer: "Portuguese", acceptedAnswers: ["Portuguese", "portuguese"] },
+    { type: "fill-blank", prompt: "Mount ___ is the tallest mountain on Earth.", answer: "Everest", acceptedAnswers: ["Everest", "everest"] },
+    { type: "fill-blank", prompt: "The heart pumps ___ around the body.", answer: "blood", acceptedAnswers: ["blood", "Blood"] },
+    { type: "fill-blank", prompt: "The first man to walk on the moon was Neil ___.", answer: "Armstrong", acceptedAnswers: ["Armstrong", "armstrong"] },
+    { type: "fill-blank", prompt: "Batman's home city is ___.", answer: "Gotham", acceptedAnswers: ["Gotham", "gotham", "Gotham City"] },
+    { type: "fill-blank", prompt: "The platform ___ lets you watch short videos up to 60 seconds and uses a music-note logo.", answer: "TikTok", acceptedAnswers: ["TikTok", "tiktok"] },
+    { type: "fill-blank", prompt: "The Colosseum is located in ___, Italy.", answer: "Rome", acceptedAnswers: ["Rome", "rome"] },
+    { type: "fill-blank", prompt: "___ is the programming language behind most websites' styling.", answer: "CSS", acceptedAnswers: ["CSS", "css"] },
+    { type: "fill-blank", prompt: "A group of lions is called a ___.", answer: "pride", acceptedAnswers: ["pride", "Pride"] },
+    { type: "fill-blank", prompt: "The inventor of the telephone was Alexander Graham ___.", answer: "Bell", acceptedAnswers: ["Bell", "bell"] },
+    { type: "fill-blank", prompt: "The flag of Japan features a red ___ on a white background.", answer: "circle", acceptedAnswers: ["circle", "Circle", "disc", "disk", "sun"] },
+    { type: "fill-blank", prompt: "Harry Potter's owl is named ___.", answer: "Hedwig", acceptedAnswers: ["Hedwig", "hedwig"] },
+    { type: "fill-blank", prompt: "The main ingredient in sushi is ___ rice.", answer: "vinegared", acceptedAnswers: ["vinegared", "sushi", "rice"] },
+  ],
 };
 
 function normalizePartyAnswer(text: string) {
@@ -454,7 +576,7 @@ function isPartyCorrectAnswer(userAnswer: string, question: Question) {
 
 
 function shuffleQuestionOptions(question: Question): Question {
-  if (!question.options || question.options.length === 0) return question;
+  if (!question.options || question.options.length === 0 || question.type === "true-or-false") return question;
 
   const options = [...question.options];
 
@@ -537,6 +659,9 @@ function getGameLabel(gameType?: PartyGameType) {
     trivia: "Trivia Rush",
     "odd-one-out": "Odd One Out",
     "this-or-that": "Prediction Pick",
+    "math-rush": "Math Rush",
+    "true-or-false": "True or False",
+    "fill-blank": "Fill the Blank",
   };
 
   return labels[gameType || "logo-flag"];
@@ -553,6 +678,9 @@ function getQuestionLabel(question?: Question) {
     trivia: "🧠 Trivia",
     "odd-one-out": "🧩 Odd One Out",
     "this-or-that": "⚡ Prediction Pick",
+    "math-rush": "🔢 Math Rush",
+    "true-or-false": "✅ True or False",
+    "fill-blank": "📝 Fill the Blank",
   };
 
   return labels[question.type];
@@ -1597,6 +1725,31 @@ export default function RoomPage() {
           padding:18px 20px;
           border-radius:18px;
         }
+        .math-rush-prompt{
+          font-family:'Syne',sans-serif;
+          font-size:52px;
+          font-weight:900;
+          letter-spacing:-.02em;
+          color:#f59e0b;
+          text-shadow:0 0 32px rgba(245,158,11,.45);
+          line-height:1.1;
+        }
+        .fill-blank-prompt{
+          font-size:26px;
+          line-height:1.5;
+        }
+        .blank-span{
+          display:inline-block;
+          color:#8b5cf6;
+          border-bottom:3px solid #8b5cf6;
+          padding:0 8px;
+          margin:0 4px;
+          font-weight:900;
+          letter-spacing:.1em;
+        }
+        .party-true-or-false .option-grid{
+          max-width:420px;
+        }
         .option-hint{
           font-size:12px;
           color:var(--muted);
@@ -1954,25 +2107,52 @@ export default function RoomPage() {
           transition:width 0.4s ease;
         }
 
-        /* ── Background orbs ── */
-        .r-bg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;
-          background:
-            radial-gradient(ellipse 70% 45% at 20% 10%, rgba(56,217,255,0.13), transparent),
-            radial-gradient(ellipse 60% 45% at 85% 15%, rgba(167,139,250,0.13), transparent),
-            linear-gradient(160deg,#040610 0%,#070f28 45%,#0d1130 100%);
+        /* ── Background — no blur filter, transform-only for GPU smoothness ── */
+        .r-bg{
+          position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;
+          background:#03050f;
         }
         .r-bg::before{
-          content:'';position:absolute;inset:0;
-          background:
-            linear-gradient(90deg,rgba(255,255,255,0.016) 1px,transparent 1px),
-            linear-gradient(rgba(255,255,255,0.016) 1px,transparent 1px);
-          background-size:60px 60px;opacity:0.5;
+          content:'';position:absolute;inset:0;pointer-events:none;
+          background:radial-gradient(circle,rgba(255,255,255,0.02) 1px,transparent 1px);
+          background-size:44px 44px;
         }
-        .r-orb{position:absolute;border-radius:50%;filter:blur(64px);pointer-events:none}
-        .r-orb1{width:480px;height:480px;top:-100px;right:-80px;background:radial-gradient(circle,rgba(99,102,241,0.18),transparent 70%);animation:orbFloat 20s ease-in-out infinite}
-        .r-orb2{width:380px;height:380px;bottom:-80px;left:-60px;background:radial-gradient(circle,rgba(56,217,255,0.12),transparent 70%);animation:orbFloat 26s ease-in-out infinite reverse}
-        .r-orb3{width:260px;height:260px;top:45%;left:42%;background:radial-gradient(circle,rgba(250,204,21,0.07),transparent 70%);animation:orbFloat 18s ease-in-out infinite;animation-delay:-6s}
-        @keyframes orbFloat{0%,100%{transform:translate(0,0)}33%{transform:translate(16px,-20px)}66%{transform:translate(-18px,14px)}}
+        .r-bg::after{
+          content:'';position:absolute;inset:0;pointer-events:none;
+          background:repeating-linear-gradient(to bottom,transparent 0px,transparent 3px,rgba(0,0,0,0.016) 3px,rgba(0,0,0,0.016) 4px);
+          animation:scanMove 10s linear infinite;
+        }
+        .r-orb{position:absolute;border-radius:50%;pointer-events:none;will-change:transform}
+        .r-orb1{
+          width:72vw;height:72vw;max-width:820px;max-height:820px;
+          top:-26%;left:-16%;
+          background:radial-gradient(circle at 36% 36%,rgba(99,102,241,0.26) 0%,rgba(56,217,255,0.06) 42%,transparent 65%);
+          animation:blobA 24s ease-in-out infinite;
+        }
+        .r-orb2{
+          width:56vw;height:56vw;max-width:660px;max-height:660px;
+          bottom:-16%;right:-12%;
+          background:radial-gradient(circle at 60% 62%,rgba(167,139,250,0.24) 0%,rgba(244,114,182,0.05) 42%,transparent 65%);
+          animation:blobB 30s ease-in-out infinite;
+        }
+        .r-orb3{
+          width:38vw;height:38vw;max-width:460px;max-height:460px;
+          top:40%;right:6%;
+          background:radial-gradient(circle at 50% 50%,rgba(56,217,255,0.11) 0%,transparent 65%);
+          animation:blobA 20s ease-in-out infinite reverse;animation-delay:-7s;
+        }
+        @keyframes blobA{
+          0%,100%{transform:translate(0,0) scale(1)}
+          25%{transform:translate(3vw,-3vw) scale(1.04)}
+          50%{transform:translate(5vw,2vw) scale(0.97)}
+          75%{transform:translate(-2vw,4vw) scale(1.02)}
+        }
+        @keyframes blobB{
+          0%,100%{transform:translate(0,0) scale(1)}
+          25%{transform:translate(-4vw,2vw) scale(1.03)}
+          50%{transform:translate(-2vw,-4vw) scale(0.98)}
+          75%{transform:translate(3vw,-2vw) scale(1.04)}
+        }
       `}</style>
 
       <div className="page-layout">
@@ -2239,10 +2419,20 @@ export default function RoomPage() {
                 </div>
               ) : (
                 <div className={`party-question party-${room.currentQuestion.type}`} key={room.questionIndex}>
-                  <div className="party-game-label">{getGameLabel(room.gameType)}</div>
-                  <div className={room.currentQuestion.type === "emoji" ? "emoji-prompt" : "party-prompt"}>
-                    {room.currentQuestion.prompt}
-                  </div>
+                  <div className="party-game-label">{getGameLabel(room.roundGameType ?? room.gameType)}</div>
+                  {room.currentQuestion.type === "emoji" ? (
+                    <div className="emoji-prompt">{room.currentQuestion.prompt}</div>
+                  ) : room.currentQuestion.type === "math-rush" ? (
+                    <div className="math-rush-prompt">{room.currentQuestion.prompt}</div>
+                  ) : room.currentQuestion.type === "fill-blank" ? (
+                    <div className="party-prompt fill-blank-prompt">
+                      {(room.currentQuestion.prompt ?? "").split("___").map((part, i, arr) => (
+                        <span key={i}>{part}{i < arr.length - 1 && <span className="blank-span">___</span>}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="party-prompt">{room.currentQuestion.prompt}</div>
+                  )}
 
                   {room.currentQuestion.options && (
                     <>
@@ -2280,9 +2470,13 @@ export default function RoomPage() {
                       ? "✓ Answered correctly!"
                       : room.currentQuestion.type === "typing"
                         ? "Type the phrase exactly…"
-                        : room.currentQuestion.options
-                          ? "Type A/B/C/D or click an option…"
-                          : "Type your answer…"
+                        : room.currentQuestion.type === "math-rush"
+                          ? "Type the number…"
+                          : room.currentQuestion.type === "fill-blank"
+                            ? "Fill in the blank…"
+                            : room.currentQuestion.options
+                              ? "Type A/B or click an option…"
+                              : "Type your answer…"
                   }
                   value={answer}
                   onChange={(e) => handleAnswerChange(e.target.value)}

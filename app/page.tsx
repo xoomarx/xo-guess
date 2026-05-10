@@ -11,7 +11,7 @@ function createRoomCode() {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
 }
 
-type PartyGameType = "logo-flag" | "party-mix" | "emoji" | "typing" | "would-you-rather" | "trivia" | "odd-one-out" | "this-or-that";
+type PartyGameType = "logo-flag" | "party-mix" | "emoji" | "typing" | "would-you-rather" | "trivia" | "odd-one-out" | "this-or-that" | "math-rush" | "true-or-false" | "fill-blank";
 
 const MODES: { value: GameMode; emoji: string; label: string; desc: string }[] = [
   { value: "flags", emoji: "🌍", label: "Flags", desc: "150+ countries" },
@@ -28,6 +28,9 @@ const PARTY_GAMES: { value: PartyGameType; emoji: string; label: string; desc: s
   { value: "trivia",          emoji: "🧠", label: "Trivia Rush",     desc: "Quick-fire trivia",   color: "#60a5fa", bg: "rgba(96,165,250,0.11)" },
   { value: "odd-one-out",     emoji: "🧩", label: "Odd One Out",     desc: "Spot the oddball",    color: "#fb923c", bg: "rgba(251,146,60,0.11)" },
   { value: "this-or-that",    emoji: "⚡", label: "Prediction Pick", desc: "Pick the winner",     color: "#34d399", bg: "rgba(52,211,153,0.11)" },
+  { value: "math-rush",      emoji: "🔢", label: "Math Rush",       desc: "Solve it fast",       color: "#f59e0b", bg: "rgba(245,158,11,0.11)" },
+  { value: "true-or-false",  emoji: "✅", label: "True or False",   desc: "Trust your gut",      color: "#10b981", bg: "rgba(16,185,129,0.11)" },
+  { value: "fill-blank",     emoji: "📝", label: "Fill the Blank",  desc: "Complete the phrase", color: "#8b5cf6", bg: "rgba(139,92,246,0.11)" },
 ];
 
 export default function Home() {
@@ -176,38 +179,69 @@ export default function Home() {
         @keyframes fadeUp   { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
         @keyframes shimmer  { 0%{background-position:-200% center} 100%{background-position:200% center} }
         @keyframes pulse-dot{ 0%,100%{opacity:1;box-shadow:0 0 6px var(--accent)} 50%{opacity:0.55;box-shadow:0 0 14px var(--accent)} }
-        @keyframes mesh-drift{
-          0%   { transform: translate(0,0) }
-          33%  { transform: translate(18px,-14px) }
-          66%  { transform: translate(-14px,18px) }
-          100% { transform: translate(0,0) }
-        }
         @keyframes card-in { from{opacity:0;transform:translateY(30px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
         @keyframes spin-slow{ from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
         /* ── Background ── */
-        .page-bg {
-          position: fixed; inset: 0; z-index: 0; overflow: hidden;
-          background:
-            radial-gradient(ellipse 90% 55% at 60% -5%, rgba(99,102,241,0.22), transparent),
-            radial-gradient(ellipse 60% 50% at 100% 70%, rgba(56,217,255,0.10), transparent),
-            radial-gradient(ellipse 65% 55% at -5% 80%,  rgba(167,139,250,0.12), transparent),
-            #03050f;
+        .aurora-bg {
+          position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+          background: #03050f;
         }
-        .page-bg::before {
-          content:''; position:absolute; inset:0;
-          background:
-            linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px),
-            linear-gradient(rgba(255,255,255,0.014) 1px, transparent 1px);
-          background-size: 60px 60px;
+        /* dot grid */
+        .aurora-bg::before {
+          content: ''; position: absolute; inset: 0; pointer-events: none;
+          background: radial-gradient(circle, rgba(255,255,255,0.022) 1px, transparent 1px);
+          background-size: 44px 44px;
         }
-        .mesh-orb {
-          position: absolute; border-radius: 50%; filter: blur(72px);
-          animation: mesh-drift var(--dur,22s) ease-in-out infinite;
+        /* scanlines */
+        .aurora-bg::after {
+          content: ''; position: absolute; inset: 0; pointer-events: none;
+          background: repeating-linear-gradient(to bottom, transparent 0px, transparent 3px, rgba(0,0,0,0.018) 3px, rgba(0,0,0,0.018) 4px);
+          animation: scanMove 8s linear infinite;
         }
-        .mesh-1 { width:560px;height:560px;top:-120px;right:-120px;background:radial-gradient(circle,rgba(99,102,241,0.18),transparent 70%);--dur:26s; }
-        .mesh-2 { width:420px;height:420px;bottom:-90px;left:-80px;background:radial-gradient(circle,rgba(56,217,255,0.13),transparent 70%);--dur:32s;animation-delay:-9s; }
-        .mesh-3 { width:320px;height:320px;top:42%;left:38%;background:radial-gradient(circle,rgba(250,204,21,0.07),transparent 70%);--dur:24s;animation-delay:-5s; }
+        @keyframes scanMove { from{background-position:0 0} to{background-position:0 100px} }
+
+        /* blobs — no blur filter, only transform animated = zero jank */
+        .blob {
+          position: absolute; border-radius: 50%; pointer-events: none;
+          will-change: transform;
+        }
+        .blob-1 {
+          width: 75vw; height: 75vw; max-width: 860px; max-height: 860px;
+          top: -28%; left: -18%;
+          background: radial-gradient(circle at 38% 38%, rgba(99,102,241,0.28) 0%, rgba(56,217,255,0.07) 42%, transparent 65%);
+          animation: blobA 22s ease-in-out infinite;
+        }
+        .blob-2 {
+          width: 58vw; height: 58vw; max-width: 680px; max-height: 680px;
+          bottom: -18%; right: -14%;
+          background: radial-gradient(circle at 60% 60%, rgba(167,139,250,0.25) 0%, rgba(244,114,182,0.06) 42%, transparent 65%);
+          animation: blobB 27s ease-in-out infinite;
+        }
+        .blob-3 {
+          width: 40vw; height: 40vw; max-width: 480px; max-height: 480px;
+          top: 38%; right: 8%;
+          background: radial-gradient(circle at 50% 50%, rgba(250,204,21,0.12) 0%, transparent 65%);
+          animation: blobA 19s ease-in-out infinite reverse; animation-delay: -6s;
+        }
+        .blob-4 {
+          width: 48vw; height: 48vw; max-width: 580px; max-height: 580px;
+          top: 55%; left: 18%;
+          background: radial-gradient(circle at 50% 50%, rgba(56,217,255,0.10) 0%, transparent 65%);
+          animation: blobB 24s ease-in-out infinite; animation-delay: -4s;
+        }
+        @keyframes blobA {
+          0%,100% { transform: translate(0,0) scale(1); }
+          25%  { transform: translate(3vw,-3vw) scale(1.04); }
+          50%  { transform: translate(5vw,2vw) scale(0.97); }
+          75%  { transform: translate(-2vw,4vw) scale(1.02); }
+        }
+        @keyframes blobB {
+          0%,100% { transform: translate(0,0) scale(1); }
+          25%  { transform: translate(-4vw,2vw) scale(1.03); }
+          50%  { transform: translate(-2vw,-4vw) scale(0.98); }
+          75%  { transform: translate(3vw,-2vw) scale(1.04); }
+        }
 
         /* ── Page root ── */
         .page-root {
@@ -474,11 +508,12 @@ export default function Home() {
         .feat-st  { font-size: 10px; color: var(--muted); }
       `}</style>
 
-      {/* Animated background */}
-      <div className="page-bg">
-        <div className="mesh-orb mesh-1" />
-        <div className="mesh-orb mesh-2" />
-        <div className="mesh-orb mesh-3" />
+      {/* Animated background — CSS-only blobs, transform-only animations */}
+      <div className="aurora-bg" aria-hidden="true">
+        <div className="blob blob-1" />
+        <div className="blob blob-2" />
+        <div className="blob blob-3" />
+        <div className="blob blob-4" />
       </div>
 
       <div className="page-root">
