@@ -14,34 +14,32 @@ function createRoomCode() {
 type PartyGameType = "logo-flag" | "party-mix" | "emoji" | "typing" | "would-you-rather" | "trivia" | "odd-one-out" | "this-or-that";
 
 const MODES: { value: GameMode; emoji: string; label: string; desc: string }[] = [
-  { value: "flags", emoji: "🌍", label: "Flags Only", desc: "150+ countries" },
-  { value: "logos", emoji: "🏷️", label: "Logos Only", desc: "100+ brands" },
-  { value: "mix",   emoji: "🎲", label: "Mix Both",  desc: "Flags + logos" },
+  { value: "flags", emoji: "🌍", label: "Flags", desc: "150+ countries" },
+  { value: "logos", emoji: "🏷️", label: "Logos", desc: "100+ brands" },
+  { value: "mix",   emoji: "🎲", label: "Mix",   desc: "Both" },
 ];
 
-
-const PARTY_GAMES: { value: PartyGameType; emoji: string; label: string; desc: string }[] = [
-  { value: "logo-flag", emoji: "🏷️", label: "Logo & Flag Rush", desc: "Your classic image guessing game" },
-  { value: "party-mix", emoji: "🎉", label: "Party Mix", desc: "Random game type every round" },
-  { value: "emoji", emoji: "😂", label: "Emoji Guess", desc: "Guess brands, movies, games from emojis" },
-  { value: "typing", emoji: "⌨️", label: "Typing Battle", desc: "Type the phrase fastest" },
-  { value: "would-you-rather", emoji: "🤔", label: "Majority Guess", desc: "Predict the popular choice" },
-  { value: "trivia", emoji: "🧠", label: "Trivia Rush", desc: "Quick questions, speed scoring" },
-  { value: "odd-one-out", emoji: "🧩", label: "Odd One Out", desc: "Find the one that doesn't belong" },
-  { value: "this-or-that", emoji: "⚡", label: "Prediction Pick", desc: "Choose the predicted winner" },
+const PARTY_GAMES: { value: PartyGameType; emoji: string; label: string; desc: string; color: string; bg: string }[] = [
+  { value: "logo-flag",       emoji: "🏷️", label: "Logo & Flag",    desc: "Image guessing",      color: "#38d9ff", bg: "rgba(56,217,255,0.13)" },
+  { value: "party-mix",       emoji: "🎉", label: "Party Mix",       desc: "Random every round",  color: "#a78bfa", bg: "rgba(167,139,250,0.13)" },
+  { value: "emoji",           emoji: "😂", label: "Emoji Guess",     desc: "Guess from emojis",   color: "#facc15", bg: "rgba(250,204,21,0.11)" },
+  { value: "typing",          emoji: "⌨️", label: "Typing Battle",   desc: "Type the fastest",    color: "#4af0a0", bg: "rgba(74,240,160,0.11)" },
+  { value: "would-you-rather",emoji: "🤔", label: "Majority Guess",  desc: "Predict the crowd",   color: "#f472b6", bg: "rgba(244,114,182,0.11)" },
+  { value: "trivia",          emoji: "🧠", label: "Trivia Rush",     desc: "Quick-fire trivia",   color: "#60a5fa", bg: "rgba(96,165,250,0.11)" },
+  { value: "odd-one-out",     emoji: "🧩", label: "Odd One Out",     desc: "Spot the oddball",    color: "#fb923c", bg: "rgba(251,146,60,0.11)" },
+  { value: "this-or-that",    emoji: "⚡", label: "Prediction Pick", desc: "Pick the winner",     color: "#34d399", bg: "rgba(52,211,153,0.11)" },
 ];
-
 
 export default function Home() {
   const router = useRouter();
-  const [tab, setTab]         = useState<"create" | "join">("create");
-  const [name, setName]       = useState("");
-  const [joinCode, setJoinCode] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [joinError, setJoinError] = useState("");
-  const [gameMode, setGameMode] = useState<GameMode>("mix");
-  const [gameType, setGameType] = useState<PartyGameType>("logo-flag");
-  const [rounds, setRounds] = useState(10);
+  const [tab, setTab]               = useState<"create" | "join">("create");
+  const [name, setName]             = useState("");
+  const [joinCode, setJoinCode]     = useState("");
+  const [loading, setLoading]       = useState(false);
+  const [joinError, setJoinError]   = useState("");
+  const [gameMode, setGameMode]     = useState<GameMode>("mix");
+  const [gameType, setGameType]     = useState<PartyGameType>("logo-flag");
+  const [rounds, setRounds]         = useState(10);
   const [timerSeconds, setTimerSeconds] = useState(15);
   const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
   const [customCode, setCustomCode] = useState("");
@@ -83,14 +81,11 @@ export default function Home() {
     router.push(`/room/${roomCode}`);
   }
 
-
   async function createSoloGame() {
     if (!name.trim()) return;
     setLoading(true);
-
     const user = await getOrSignIn();
     const roomCode = createRoomCode();
-
     await set(ref(db, `rooms/${roomCode}`), {
       hostId: user.uid,
       status: "lobby",
@@ -120,7 +115,6 @@ export default function Home() {
         },
       },
     });
-
     localStorage.setItem("name", name.trim());
     router.push(`/room/${roomCode}`);
   }
@@ -144,573 +138,547 @@ export default function Home() {
       setLoading(false);
       return;
     }
-    const user = await getOrSignIn();
+    await getOrSignIn();
     localStorage.setItem("name", name.trim());
     router.push(`/room/${code}`);
   }
 
-  const canSubmit =
-    tab === "create"
-      ? name.trim() && !loading
-      : name.trim() && joinCode.trim() && !loading;
+  const selectedGame = PARTY_GAMES.find(g => g.value === gameType);
 
   return (
     <>
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
-
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;700&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-          --bg: #050716;
-          --bg2: #0b1230;
-          --surface: rgba(13, 22, 44, 0.82);
-          --surface2: rgba(26, 39, 72, 0.78);
-          --surface3: rgba(35, 52, 94, 0.9);
-          --border: rgba(255,255,255,0.10);
-          --border-accent: rgba(56, 217, 255, 0.35);
+          --bg: #03050f;
+          --surface: rgba(10,14,32,0.92);
+          --surface2: rgba(16,22,50,0.88);
+          --border: rgba(255,255,255,0.08);
+          --border-hi: rgba(255,255,255,0.16);
           --accent: #38d9ff;
           --accent2: #a78bfa;
           --accent3: #facc15;
+          --text: #eef2ff;
+          --muted: #6b7fa8;
           --danger: #fb7185;
-          --text: #f8fbff;
-          --muted: #9aaccf;
-          --glow: 0 0 34px rgba(56, 217, 255, 0.16);
         }
 
         body {
-          background:
-            radial-gradient(circle at 18% 12%, rgba(56,217,255,0.14), transparent 30%),
-            radial-gradient(circle at 88% 18%, rgba(167,139,250,0.16), transparent 32%),
-            radial-gradient(circle at 50% 100%, rgba(250,204,21,0.09), transparent 28%),
-            linear-gradient(180deg, var(--bg), var(--bg2));
+          background: var(--bg);
           color: var(--text);
           font-family: 'DM Sans', sans-serif;
           min-height: 100vh;
           overflow-x: hidden;
         }
 
-        @keyframes grain {
-          0%,100%{transform:translate(0,0)}10%{transform:translate(-2%,-3%)}
-          20%{transform:translate(3%,2%)}30%{transform:translate(-1%,4%)}
-          40%{transform:translate(4%,-1%)}50%{transform:translate(-3%,3%)}
-          60%{transform:translate(2%,-4%)}70%{transform:translate(-4%,1%)}
-          80%{transform:translate(3%,-2%)}90%{transform:translate(-2%,4%)}
+        @keyframes fadeUp   { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes shimmer  { 0%{background-position:-200% center} 100%{background-position:200% center} }
+        @keyframes pulse-dot{ 0%,100%{opacity:1;box-shadow:0 0 6px var(--accent)} 50%{opacity:0.55;box-shadow:0 0 14px var(--accent)} }
+        @keyframes mesh-drift{
+          0%   { transform: translate(0,0) }
+          33%  { transform: translate(18px,-14px) }
+          66%  { transform: translate(-14px,18px) }
+          100% { transform: translate(0,0) }
         }
-        @keyframes float { 0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)} }
-        @keyframes pulse-ring {
-          0%{transform:scale(1);opacity:0.7} 100%{transform:scale(1.8);opacity:0}
+        @keyframes card-in { from{opacity:0;transform:translateY(30px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes spin-slow{ from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+        /* ── Background ── */
+        .page-bg {
+          position: fixed; inset: 0; z-index: 0; overflow: hidden;
+          background:
+            radial-gradient(ellipse 90% 55% at 60% -5%, rgba(99,102,241,0.22), transparent),
+            radial-gradient(ellipse 60% 50% at 100% 70%, rgba(56,217,255,0.10), transparent),
+            radial-gradient(ellipse 65% 55% at -5% 80%,  rgba(167,139,250,0.12), transparent),
+            #03050f;
         }
-        @keyframes fadeUp {
-          from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)}
+        .page-bg::before {
+          content:''; position:absolute; inset:0;
+          background:
+            linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px),
+            linear-gradient(rgba(255,255,255,0.014) 1px, transparent 1px);
+          background-size: 60px 60px;
         }
-        @keyframes shimmer {
-          0%{background-position:-200% center} 100%{background-position:200% center}
+        .mesh-orb {
+          position: absolute; border-radius: 50%; filter: blur(72px);
+          animation: mesh-drift var(--dur,22s) ease-in-out infinite;
         }
-        @keyframes spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes tab-slide {
-          from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)}
+        .mesh-1 { width:560px;height:560px;top:-120px;right:-120px;background:radial-gradient(circle,rgba(99,102,241,0.18),transparent 70%);--dur:26s; }
+        .mesh-2 { width:420px;height:420px;bottom:-90px;left:-80px;background:radial-gradient(circle,rgba(56,217,255,0.13),transparent 70%);--dur:32s;animation-delay:-9s; }
+        .mesh-3 { width:320px;height:320px;top:42%;left:38%;background:radial-gradient(circle,rgba(250,204,21,0.07),transparent 70%);--dur:24s;animation-delay:-5s; }
+
+        /* ── Page root ── */
+        .page-root {
+          min-height: 100vh;
+          display: flex; align-items: center; justify-content: center;
+          padding: 36px 20px;
+          position: relative; z-index: 1;
         }
-        @keyframes error-in {
-          from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)}
+        .page-inner {
+          display: grid;
+          grid-template-columns: 1fr 500px;
+          gap: 64px;
+          max-width: 1020px;
+          width: 100%;
+          align-items: center;
         }
-        @keyframes mode-select {
-          0%{transform:scale(1)} 40%{transform:scale(0.94)} 100%{transform:scale(1)}
+        @media(max-width:900px) {
+          .page-inner { grid-template-columns: 1fr; gap: 36px; }
+          .hero-col { text-align: center; }
+          .hero-features { justify-content: center; }
+          .page-root { padding: 28px 16px 40px; }
         }
 
-        .noise::after {
-          content:'';position:fixed;inset:-50%;width:200%;height:200%;
-          background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-          opacity:0.03;pointer-events:none;z-index:999;animation:grain 8s steps(10) infinite;
+        /* ── Hero column ── */
+        .hero-live {
+          display: inline-flex; align-items: center; gap: 8px;
+          margin-bottom: 22px;
+          animation: fadeUp 0.4s ease both;
+        }
+        .live-dot {
+          width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+          animation: pulse-dot 1.6s ease-in-out infinite;
+        }
+        .live-text {
+          font-size: 10px; font-weight: 800; letter-spacing: 0.2em;
+          text-transform: uppercase; color: var(--muted);
         }
 
-        .bg-ring {
-          position:fixed;border-radius:50%;pointer-events:none;border:1px solid;
+        h1.hero-title {
+          font-family: 'Syne', sans-serif;
+          font-size: clamp(58px, 8.5vw, 92px);
+          font-weight: 900; line-height: 0.88;
+          letter-spacing: -0.035em;
+          margin-bottom: 22px;
+          animation: fadeUp 0.5s ease both; animation-delay: 0.06s;
         }
-        .bg-ring-1 {
-          width:600px;height:600px;top:50%;left:50%;
-          transform:translate(-50%,-50%);
-          border-color:rgba(240,192,64,0.04);
-          animation:spin-slow 40s linear infinite;
-        }
-        .bg-ring-2 {
-          width:900px;height:900px;top:50%;left:50%;
-          transform:translate(-50%,-50%);
-          border-color:rgba(74,240,160,0.03);
-          animation:spin-slow 60s linear infinite reverse;
-        }
-        .hero-glow {
-          position:fixed;top:-300px;left:50%;transform:translateX(-50%);
-          width:800px;height:800px;
-          background:radial-gradient(ellipse,rgba(240,192,64,0.07) 0%,transparent 65%);
-          pointer-events:none;
-        }
-        .hero-glow-2 {
-          position:fixed;bottom:-200px;right:-100px;
-          width:600px;height:600px;
-          background:radial-gradient(ellipse,rgba(74,240,160,0.05) 0%,transparent 65%);
-          pointer-events:none;
+        .title-line { display: block; }
+        .title-grad {
+          background: linear-gradient(130deg, var(--accent) 0%, var(--accent2) 45%, var(--accent3) 100%);
+          background-size: 200% auto;
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+          animation: shimmer 4s linear infinite, fadeUp 0.5s ease both;
+          animation-delay: 0s, 0.06s;
         }
 
-        .card {
-          width:100%;max-width:520px;
-          background:linear-gradient(180deg, rgba(18,29,58,0.88), rgba(10,17,37,0.88));
-          border:1px solid var(--border);
-          border-radius:32px;
-          padding:42px;
-          position:relative;
-          animation:fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
-          box-shadow:0 34px 90px rgba(0,0,0,0.52), var(--glow), 0 0 0 1px rgba(255,255,255,0.04) inset;
-          backdrop-filter:blur(18px);
-          overflow:hidden;
+        .hero-desc {
+          font-size: 15px; color: var(--muted); line-height: 1.8;
+          max-width: 370px; margin-bottom: 28px;
+          animation: fadeUp 0.5s ease both; animation-delay: 0.12s;
+        }
+        @media(max-width:900px) { .hero-desc { max-width: 100%; } }
+
+        .hero-features {
+          display: flex; flex-wrap: wrap; gap: 8px;
+          animation: fadeUp 0.5s ease both; animation-delay: 0.18s;
+        }
+        .hero-pill {
+          display: inline-flex; align-items: center; gap: 5px;
+          padding: 7px 13px; border-radius: 100px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.09);
+          font-size: 12px; font-weight: 500; color: var(--muted);
+          backdrop-filter: blur(8px);
         }
 
-        .badge {
-          display:inline-flex;align-items:center;gap:8px;
-          background:rgba(56,217,255,0.10);border:1px solid rgba(56,217,255,0.24);
-          color:var(--accent);font-size:10px;font-weight:800;
-          letter-spacing:0.16em;text-transform:uppercase;
-          padding:7px 15px;border-radius:100px;margin-bottom:28px;
-          animation:fadeUp 0.4s ease both;
-          box-shadow:0 0 22px rgba(56,217,255,0.12);
+        /* ── Main card ── */
+        .main-card {
+          background: linear-gradient(155deg, rgba(14,19,48,0.94), rgba(6,9,25,0.94));
+          border: 1px solid rgba(255,255,255,0.10);
+          border-radius: 28px;
+          padding: 30px;
+          backdrop-filter: blur(22px);
+          box-shadow:
+            0 48px 110px rgba(0,0,0,0.65),
+            0 0 0 1px rgba(255,255,255,0.04) inset;
+          animation: card-in 0.65s cubic-bezier(0.22,1,0.36,1) both;
+          animation-delay: 0.08s;
+          position: relative; overflow: hidden;
         }
-        .badge-dot {
-          width:6px;height:6px;border-radius:50%;background:var(--accent);position:relative;
-        }
-        .badge-dot::after {
-          content:'';position:absolute;inset:-3px;border-radius:50%;
-          background:var(--accent);animation:pulse-ring 1.5s ease-out infinite;
-        }
-
-        h1.title {
-          font-family:'Syne',sans-serif;
-          font-size:clamp(52px,9vw,96px);
-          font-weight:900;line-height:0.92;
-          letter-spacing:-0.04em;margin-bottom:20px;
-          animation:fadeUp 0.5s ease both;animation-delay:0.05s;
-        }
-        .title-accent {
-          background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3),var(--accent));
-          background-size:200% auto;
-          -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-          animation:shimmer 3s linear infinite,fadeUp 0.5s ease both;
-          animation-delay:0s,0.08s;
+        .main-card::before {
+          content: ''; position: absolute; inset: 0; border-radius: 28px; pointer-events: none;
+          background:
+            radial-gradient(circle at 85% 5%, rgba(167,139,250,0.09), transparent 40%),
+            radial-gradient(circle at 5% 95%, rgba(56,217,255,0.07), transparent 40%);
         }
 
-        .subtitle {
-          font-size:14px;color:var(--muted);line-height:1.75;
-          max-width:320px;margin-bottom:28px;font-weight:300;
-          animation:fadeUp 0.5s ease both;animation-delay:0.12s;
+        /* ── Section label ── */
+        .sec-label {
+          font-size: 10px; font-weight: 800; letter-spacing: 0.18em;
+          text-transform: uppercase; color: var(--muted);
+          margin-bottom: 10px; display: block;
         }
 
-        /* ── Mode Selector ── */
-        .mode-section {
-          margin-bottom:20px;
-          animation:fadeUp 0.5s ease both;animation-delay:0.14s;
+        /* ── Game picker ── */
+        .game-grid {
+          display: grid; grid-template-columns: repeat(2,1fr); gap: 7px;
+          margin-bottom: 18px;
         }
-        .mode-label {
-          font-size:10px;font-weight:700;text-transform:uppercase;
-          letter-spacing:0.14em;color:var(--muted);margin-bottom:10px;display:block;
+        .game-btn {
+          display: flex; align-items: center; gap: 10px;
+          padding: 11px 13px; border-radius: 13px;
+          border: 1px solid var(--border);
+          background: rgba(255,255,255,0.04);
+          cursor: pointer; text-align: left; color: var(--text);
+          transition: all 0.17s cubic-bezier(0.22,1,0.36,1);
         }
-        .mode-grid {
-          display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+        .game-btn:hover { background: rgba(255,255,255,0.07); border-color: var(--border-hi); transform: translateY(-1px); }
+        .game-btn.active {
+          border-color: var(--gc, var(--accent));
+          background: var(--gb, rgba(56,217,255,0.11));
+          box-shadow: 0 0 0 1px var(--gc, var(--accent)) inset, 0 8px 22px rgba(0,0,0,0.28);
         }
-        .mode-btn {
-          display:flex;flex-direction:column;align-items:center;gap:6px;
-          padding:14px 8px;border-radius:18px;border:1px solid var(--border);
-          background:linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018));
-          cursor:pointer;
-          transition:transform 0.18s cubic-bezier(0.22,1,0.36,1), border-color 0.18s, box-shadow 0.18s, background 0.18s;
-          color:var(--muted);
-        }
-        .mode-btn:hover {
-          border-color:rgba(255,255,255,0.14);color:var(--text);
-          transform:translateY(-1px);
-        }
-        .mode-btn.selected {
-          border-color:rgba(56,217,255,0.42);
-          background:linear-gradient(180deg, rgba(56,217,255,0.12), rgba(167,139,250,0.10));
-          color:var(--text);
-          box-shadow:0 0 0 1px rgba(56,217,255,0.16), 0 16px 34px rgba(56,217,255,0.13);
-          animation:mode-select 0.25s ease;
-        }
-        .mode-btn.selected.flags-mode {
-          border-color:rgba(74,240,160,0.35);
-          background:rgba(74,240,160,0.07);
-          box-shadow:0 0 0 1px rgba(74,240,160,0.15), 0 8px 24px rgba(74,240,160,0.1);
-        }
-        .mode-btn.selected.logos-mode {
-          border-color:rgba(160,120,255,0.35);
-          background:rgba(160,120,255,0.07);
-          box-shadow:0 0 0 1px rgba(160,120,255,0.15), 0 8px 24px rgba(160,120,255,0.1);
-        }
-        .mode-emoji { font-size:22px;line-height:1; }
-        .mode-name {
-          font-family:'Syne',sans-serif;font-size:11px;font-weight:800;
-          letter-spacing:0.02em;
-        }
-        .mode-desc { font-size:10px;color:var(--muted);text-align:center; }
-        .mode-btn.selected .mode-desc { color:inherit;opacity:0.7; }
+        .game-em { font-size: 19px; flex-shrink: 0; line-height: 1; }
+        .game-info { min-width: 0; }
+        .game-name { font-size: 12px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .game-desc { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .game-btn.active .game-desc { color: inherit; opacity: 0.72; }
 
+        /* ── Mode pills ── */
+        .mode-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 16px; }
+        .mode-pill {
+          display: flex; flex-direction: column; align-items: center; gap: 4px;
+          padding: 10px 6px; border-radius: 12px;
+          border: 1px solid var(--border); background: rgba(255,255,255,0.04);
+          cursor: pointer; color: var(--muted);
+          transition: all 0.17s ease;
+          font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        .mode-pill:hover { border-color: var(--border-hi); color: var(--text); }
+        .mode-pill.active {
+          border-color: rgba(56,217,255,0.48);
+          background: rgba(56,217,255,0.10);
+          color: var(--text);
+          box-shadow: 0 4px 14px rgba(56,217,255,0.12);
+        }
+        .mode-em { font-size: 15px; }
 
+        /* ── Settings ── */
+        .settings-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-bottom: 16px; }
+        .setting-box {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid var(--border); border-radius: 12px;
+          padding: 10px 12px;
+        }
+        .setting-box label { font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 5px; }
+        .setting-sel {
+          background: transparent; border: none; color: var(--text);
+          font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+          outline: none; cursor: pointer; width: 100%;
+        }
+        .setting-sel option { background: #0d1428; }
 
-        .game-picker-grid{
-          display:grid;
-          grid-template-columns:repeat(2,minmax(0,1fr));
-          gap:10px;
+        /* ── Custom code ── */
+        .custom-wrap { margin-bottom: 18px; }
+        .code-input {
+          width: 100%; padding: 11px 14px; border-radius: 12px;
+          background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+          color: var(--text); font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 0.2em; text-align: center;
+          outline: none; transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .game-card{
-          display:flex;
-          flex-direction:column;
-          gap:5px;
-          text-align:left;
-          border:1px solid var(--border);
-          background:rgba(255,255,255,0.045);
-          border-radius:16px;
-          padding:12px;
-          color:var(--text);
-          cursor:pointer;
-          transition:transform .18s ease,border-color .18s ease,background .18s ease;
-        }
-        .game-card:hover{transform:translateY(-2px);border-color:rgba(56,217,255,.45)}
-        .game-card.selected{
-          border-color:rgba(56,217,255,.9);
-          background:rgba(56,217,255,.09);
-          box-shadow:0 0 0 2px rgba(56,217,255,.15);
-        }
-        .game-emoji{font-size:24px}
-        .game-name{font-weight:900;font-size:13px}
-        .game-desc{font-size:11px;color:var(--muted);line-height:1.25}
+        .code-input:focus { border-color: rgba(56,217,255,0.38); box-shadow: 0 0 0 3px rgba(56,217,255,0.08); }
+        .code-input::placeholder { color: var(--muted); letter-spacing: 0.1em; font-size: 11px; font-family: 'DM Sans',sans-serif; }
 
-        .settings-grid{
-          display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;
-        }
-        .setting-card{
-          display:flex;flex-direction:column;gap:6px;
-          background:rgba(255,255,255,0.04);
-          border:1px solid var(--border);
-          border-radius:14px;padding:10px;
-        }
-        .setting-card span,.custom-code-wrap span{
-          font-size:10px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;color:var(--muted);
-        }
-        .setting-card select{
-          background:transparent;border:none;color:var(--text);font-weight:800;outline:none;
-        }
-        .setting-card option{background:#101828;color:white}
-        .custom-code-wrap{
-          display:flex;flex-direction:column;gap:7px;margin-top:10px;
-        }
-
-        /* Tabs */
+        /* ── Tabs ── */
         .tabs {
-          display:grid;grid-template-columns:1fr 1fr;
-          background:rgba(5,8,18,0.55);border-radius:18px;padding:5px;
-          gap:5px;margin-bottom:24px;
-          animation:fadeUp 0.5s ease both;animation-delay:0.16s;
-          border:1px solid var(--border);
+          display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+          padding: 4px; border-radius: 16px;
+          background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+          margin-bottom: 18px;
         }
-        .tab {
-          padding:10px;border-radius:11px;border:none;
-          font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
-          cursor:pointer;transition:all 0.2s;color:var(--muted);background:transparent;
+        .tab-btn {
+          padding: 10px; border-radius: 11px; border: none;
+          font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700;
+          cursor: pointer; transition: all 0.2s; color: var(--muted); background: transparent;
         }
-        .tab.active {
-          background:linear-gradient(135deg, rgba(56,217,255,0.16), rgba(167,139,250,0.14));
-          color:var(--text);
-          box-shadow:0 10px 22px rgba(0,0,0,0.22), 0 0 18px rgba(56,217,255,0.10);
-          border:1px solid rgba(255,255,255,0.12);
+        .tab-btn.active {
+          background: linear-gradient(135deg, rgba(56,217,255,0.16), rgba(167,139,250,0.13));
+          color: var(--text); border: 1px solid rgba(255,255,255,0.12);
+          box-shadow: 0 8px 20px rgba(0,0,0,0.22);
         }
-        .tab:hover:not(.active) { color:var(--text); }
+        .tab-btn:hover:not(.active) { color: var(--text); }
 
-        .form { animation:tab-slide 0.25s ease both; }
-
-        .input-group { margin-bottom:12px; }
-        .input-label {
-          display:block;font-size:11px;font-weight:500;
-          text-transform:uppercase;letter-spacing:0.1em;
-          color:var(--muted);margin-bottom:7px;
+        /* ── Form fields ── */
+        .form-field { margin-bottom: 12px; }
+        .field-lbl {
+          display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.13em;
+          text-transform: uppercase; color: var(--muted); margin-bottom: 7px;
         }
-
-        .field {
-          width:100%;background:rgba(255,255,255,0.055);
-          border:1px solid var(--border);color:var(--text);
-          font-family:'DM Sans',sans-serif;font-size:15px;
-          padding:15px 18px;border-radius:17px;outline:none;
-          transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;
+        .txt-input {
+          width: 100%; padding: 14px 16px; border-radius: 14px;
+          background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+          color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px;
+          outline: none; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
-        .field:focus {
-          border-color:var(--border-accent);
-          box-shadow:0 0 0 3px rgba(240,192,64,0.07);
-        }
-        .field::placeholder { color:var(--muted); }
+        .txt-input:focus { border-color: rgba(56,217,255,0.38); box-shadow: 0 0 0 3px rgba(56,217,255,0.08); background: rgba(255,255,255,0.09); }
+        .txt-input::placeholder { color: var(--muted); }
+        .txt-input.is-code { text-transform: uppercase; letter-spacing: 0.2em; font-family: 'Syne',sans-serif; font-size: 18px; font-weight: 700; text-align: center; }
 
-        .code-field {
-          text-transform:uppercase;letter-spacing:0.2em;
-          font-family:'Syne',sans-serif;font-size:18px;font-weight:700;
-          text-align:center;
+        /* ── Error ── */
+        .err-msg {
+          background: rgba(251,113,133,0.10); border: 1px solid rgba(251,113,133,0.22);
+          color: var(--danger); font-size: 13px; padding: 10px 14px; border-radius: 10px;
+          margin-bottom: 12px;
         }
 
-        .error-msg {
-          background:rgba(240,96,96,0.1);border:1px solid rgba(240,96,96,0.25);
-          color:var(--danger);font-size:13px;padding:10px 14px;border-radius:10px;
-          margin-bottom:12px;animation:error-in 0.2s ease;
+        /* ── CTA buttons ── */
+        .cta {
+          width: 100%; padding: 16px; border-radius: 16px; border: none;
+          font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 900;
+          letter-spacing: 0.02em; cursor: pointer;
+          transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+          margin-bottom: 10px;
         }
+        .cta:hover:not(:disabled) { transform: translateY(-2px); }
+        .cta:active:not(:disabled) { transform: translateY(0); }
+        .cta:disabled { opacity: 0.4; cursor: not-allowed; }
+        .cta-cyan {
+          background: linear-gradient(135deg, var(--accent), #74e8ff);
+          color: #041018;
+          box-shadow: 0 14px 36px rgba(56,217,255,0.28);
+        }
+        .cta-cyan:hover:not(:disabled) { box-shadow: 0 20px 48px rgba(56,217,255,0.40); }
+        .cta-violet {
+          background: linear-gradient(135deg, var(--accent2), #c4b5fd);
+          color: #08051a;
+          box-shadow: 0 14px 36px rgba(167,139,250,0.26);
+        }
+        .cta-violet:hover:not(:disabled) { box-shadow: 0 20px 48px rgba(167,139,250,0.38); }
 
-        .cta-btn {
-          width:100%;margin-top:4px;padding:17px 24px;
-          border-radius:18px;border:none;
-          background:linear-gradient(135deg,var(--accent),#8be9ff);
-          color:#04111b;
-          font-family:'Syne',sans-serif;font-size:15px;font-weight:900;
-          letter-spacing:0.02em;cursor:pointer;
-          transition:transform 0.15s,box-shadow 0.15s,opacity 0.15s;
-          box-shadow:0 12px 34px rgba(56,217,255,0.26);
+        /* ── Quick actions ── */
+        .quick-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+        .quick-btn {
+          padding: 10px 12px; border-radius: 12px;
+          border: 1px solid var(--border); background: rgba(255,255,255,0.04);
+          color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+          cursor: pointer; transition: all 0.17s ease;
+          display: flex; align-items: center; justify-content: center; gap: 5px;
         }
-        .cta-btn:hover:not(:disabled) {
-          transform:translateY(-2px);box-shadow:0 8px 48px rgba(240,192,64,0.4);
-        }
-        .cta-btn:active:not(:disabled) { transform:translateY(0); }
-        .cta-btn:disabled { opacity:0.4;cursor:not-allowed; }
-        .cta-btn.join-btn {
-          background:linear-gradient(135deg,var(--accent2),#c4b5fd);box-shadow:0 12px 34px rgba(167,139,250,0.24);
-        }
-        .cta-btn.join-btn:hover:not(:disabled) { box-shadow:0 8px 48px rgba(74,240,160,0.38); }
+        .quick-btn:hover:not(:disabled) { background: rgba(255,255,255,0.08); color: var(--text); border-color: var(--border-hi); }
+        .quick-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        .features {
-          display:flex;gap:10px;margin-top:32px;
-          animation:fadeUp 0.5s ease both;animation-delay:0.28s;
-        }
-        .feature {
-          flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);
-          border-radius:18px;padding:15px 13px;text-align:center;
-          box-shadow:0 10px 24px rgba(0,0,0,0.16);
-        }
-        .feature-icon { font-size:20px;margin-bottom:6px;display:block; }
-        .feature-title { font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:3px; }
-        .feature-desc { font-size:11px;color:var(--muted);line-height:1.4; }
+        /* ── Divider ── */
+        .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 
-        .orb { position:absolute;border-radius:50%;pointer-events:none; }
-        .orb-1 {
-          width:280px;height:280px;
-          background:radial-gradient(circle,rgba(74,240,160,0.07),transparent 70%);
-          bottom:-60px;right:-70px;animation:float 7s ease-in-out infinite;
+        /* ── Feature strip ── */
+        .feat-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }
+        .feat-item {
+          background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+          border-radius: 13px; padding: 12px 8px; text-align: center;
         }
-        .orb-2 {
-          width:180px;height:180px;
-          background:radial-gradient(circle,rgba(240,192,64,0.08),transparent 70%);
-          top:40px;left:-50px;animation:float 9s ease-in-out infinite reverse;
-        }
+        .feat-ic  { font-size: 17px; display: block; margin-bottom: 4px; }
+        .feat-nm  { font-family: 'Syne',sans-serif; font-size: 11px; font-weight: 800; margin-bottom: 2px; }
+        .feat-st  { font-size: 10px; color: var(--muted); }
       `}</style>
 
-      <div className="noise" />
-      <div className="bg-ring bg-ring-1" />
-      <div className="bg-ring bg-ring-2" />
-      <div className="hero-glow" />
-      <div className="hero-glow-2" />
+      {/* Animated background */}
+      <div className="page-bg">
+        <div className="mesh-orb mesh-1" />
+        <div className="mesh-orb mesh-2" />
+        <div className="mesh-orb mesh-3" />
+      </div>
 
-      <main style={{
-        minHeight:'100vh',display:'flex',alignItems:'center',
-        justifyContent:'center',padding:'40px 20px',position:'relative',
-      }}>
-        <div className="card">
-          <div className="orb orb-1" />
-          <div className="orb orb-2" />
+      <div className="page-root">
+        <div className="page-inner">
 
-          <div className="badge">
-            <span className="badge-dot" />
-            Multiplayer · Live
+          {/* ── Hero column ── */}
+          <div className="hero-col">
+            <div className="hero-live">
+              <span className="live-dot" />
+              <span className="live-text">Multiplayer · Live</span>
+            </div>
+
+            <h1 className="hero-title">
+              <span className="title-line">Rush</span>
+              <span className="title-line title-grad">Party</span>
+              <span className="title-line">Games</span>
+            </h1>
+
+            <p className="hero-desc">
+              8 game modes, live multiplayer, real-time leaderboards. Pick a game, share the code, and race your friends to the top.
+            </p>
+
+            <div className="hero-features">
+              {["🌍 150+ flags", "🏷️ 100+ logos", "⚡ Speed scoring", "🔥 Streak bonuses", "🛡️ Power-ups", "🏆 Daily challenges"].map(p => (
+                <span key={p} className="hero-pill">{p}</span>
+              ))}
+            </div>
           </div>
 
-          <h1 className="title">
-            Rush<br />
-            <span className="title-accent">Party</span><br />
-            Games
-          </h1>
+          {/* ── Card column ── */}
+          <div className="main-card">
 
-          <p className="subtitle">
-            Pick a game, invite friends, and race for the leaderboard.
-          </p>
+            {tab === "create" && (
+              <>
+                {/* Game picker */}
+                <span className="sec-label">Choose a game</span>
+                <div className="game-grid">
+                  {PARTY_GAMES.map(g => (
+                    <button
+                      key={g.value}
+                      type="button"
+                      className={`game-btn${gameType === g.value ? " active" : ""}`}
+                      style={gameType === g.value ? { "--gc": g.color, "--gb": g.bg } as React.CSSProperties : {}}
+                      onClick={() => setGameType(g.value)}
+                    >
+                      <span className="game-em">{g.emoji}</span>
+                      <div className="game-info">
+                        <div className="game-name">{g.label}</div>
+                        <div className="game-desc">{g.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
 
-          {/* ── Game Mode Selector (only for Create) ── */}
-          {tab === "create" && (
-            <div className="mode-section">
-              <span className="mode-label">Choose Game</span>
-              <div className="game-picker-grid">
-                {PARTY_GAMES.map((game) => (
-                  <button
-                    key={game.value}
-                    type="button"
-                    className={`game-card ${gameType === game.value ? "selected" : ""}`}
-                    onClick={() => setGameType(game.value)}
-                  >
-                    <span className="game-emoji">{game.emoji}</span>
-                    <span className="game-name">{game.label}</span>
-                    <span className="game-desc">{game.desc}</span>
-                  </button>
-                ))}
-              </div>
+                {/* Mode selector */}
+                {gameType === "logo-flag" && (
+                  <>
+                    <span className="sec-label">Logo / Flag mode</span>
+                    <div className="mode-row">
+                      {MODES.map(m => (
+                        <button
+                          key={m.value}
+                          type="button"
+                          className={`mode-pill${gameMode === m.value ? " active" : ""}`}
+                          onClick={() => setGameMode(m.value)}
+                        >
+                          <span className="mode-em">{m.emoji}</span>
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
 
-              <div className={`logo-mode-wrap ${gameType !== "logo-flag" ? "hidden" : ""}`}>
-                <span className="mode-label">Logo/Flag Mode</span>
-                <div className="mode-grid">
-                {MODES.map((m) => (
-                  <button
-                    key={m.value}
-                    className={`mode-btn ${gameMode === m.value ? `selected ${m.value}-mode` : ""}`}
-                    onClick={() => setGameMode(m.value)}
-                  >
-                    <span className="mode-emoji">{m.emoji}</span>
-                    <span className="mode-name">{m.label}</span>
-                    <span className="mode-desc">{m.desc}</span>
-                  </button>
-                ))}
+                {/* Settings */}
+                <span className="sec-label">Settings</span>
+                <div className="settings-row">
+                  <div className="setting-box">
+                    <label>Rounds</label>
+                    <select className="setting-sel" value={rounds} onChange={e => setRounds(Number(e.target.value))}>
+                      {[5, 10, 15, 20].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </div>
+                  <div className="setting-box">
+                    <label>Timer</label>
+                    <select className="setting-sel" value={timerSeconds} onChange={e => setTimerSeconds(Number(e.target.value))}>
+                      {[10, 15, 20].map(n => <option key={n} value={n}>{n}s</option>)}
+                    </select>
+                  </div>
+                  <div className="setting-box">
+                    <label>Difficulty</label>
+                    <select className="setting-sel" value={difficulty} onChange={e => setDifficulty(e.target.value as Difficulty | "all")}>
+                      <option value="all">All</option>
+                      <option value="easy">Easy</option>
+                      <option value="medium">Medium</option>
+                      <option value="hard">Hard</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Custom code */}
+                <div className="custom-wrap">
+                  <span className="sec-label">Custom room code (optional)</span>
+                  <input
+                    className="code-input"
+                    placeholder="e.g. PARTY1"
+                    value={customCode}
+                    onChange={e => setCustomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))}
+                    maxLength={8}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Tabs */}
+            <div className="tabs">
+              <button className={`tab-btn${tab === "create" ? " active" : ""}`} onClick={() => { setTab("create"); setJoinError(""); }}>
+                ✦ Create Room
+              </button>
+              <button className={`tab-btn${tab === "join" ? " active" : ""}`} onClick={() => { setTab("join"); setJoinError(""); }}>
+                → Join Room
+              </button>
+            </div>
+
+            {/* Create form */}
+            {tab === "create" && (
+              <div key="create">
+                <div className="form-field">
+                  <label className="field-lbl">Your name</label>
+                  <input
+                    className="txt-input"
+                    placeholder="Enter your name…"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && !loading && name.trim() && createRoom()}
+                    maxLength={20}
+                  />
+                </div>
+                {joinError && <div className="err-msg">⚠ {joinError}</div>}
+                <button className="cta cta-cyan" onClick={createRoom} disabled={!name.trim() || loading}>
+                  {loading ? "Creating room…" : `${selectedGame?.emoji || "🎮"} Start ${selectedGame?.label || "Game"} →`}
+                </button>
+                <div className="quick-row">
+                  <button className="quick-btn" onClick={createSoloGame} disabled={!name.trim() || loading}>🎯 Solo Practice</button>
+                  <button className="quick-btn" onClick={createDailyChallenge} disabled={!name.trim() || loading}>📅 Daily Challenge</button>
                 </div>
               </div>
+            )}
 
-              <div className="settings-grid">
-                <label className="setting-card">
-                  <span>Rounds</span>
-                  <select value={rounds} onChange={(e) => setRounds(Number(e.target.value))}>
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={15}>15</option>
-                    <option value={20}>20</option>
-                  </select>
-                </label>
-
-                <label className="setting-card">
-                  <span>Timer</span>
-                  <select value={timerSeconds} onChange={(e) => setTimerSeconds(Number(e.target.value))}>
-                    <option value={10}>10s</option>
-                    <option value={15}>15s</option>
-                    <option value={20}>20s</option>
-                  </select>
-                </label>
-
-                <label className="setting-card">
-                  <span>Difficulty</span>
-                  <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty | "all")}>
-                    <option value="all">All</option>
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </label>
-              </div>
-
-              <label className="custom-code-wrap">
-                <span>Custom room code</span>
-                <input
-                  className="field code-field"
-                  placeholder="OPTIONAL"
-                  value={customCode}
-                  onChange={(e) => setCustomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))}
-                  maxLength={8}
-                />
-              </label>
-            </div>
-          )}
-
-          {/* Tabs */}
-          <div className="tabs">
-            <button
-              className={`tab ${tab === "create" ? "active" : ""}`}
-              onClick={() => { setTab("create"); setJoinError(""); }}
-            >
-              ✦ Create Game
-            </button>
-            <button
-              className={`tab ${tab === "join" ? "active" : ""}`}
-              onClick={() => { setTab("join"); setJoinError(""); }}
-            >
-              → Join Room
-            </button>
-          </div>
-
-          {tab === "create" && (
-            <div className="form" key="create">
-              <div className="input-group">
-                <label className="input-label">Your name</label>
-                <input
-                  className="field"
-                  placeholder="Enter your name…"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !loading && name.trim() && createRoom()}
-                  maxLength={20}
-                />
-              </div>
-              {joinError && <div className="error-msg">⚠ {joinError}</div>}
-              <button className="cta-btn" onClick={createRoom} disabled={!name.trim() || loading}>
-                {loading ? "Creating room…" : "Create Game →"}
-              </button>
-
-              <div className="quick-actions">
-                <button className="tab" onClick={createSoloGame} disabled={!name.trim() || loading}>
-                  🎯 Solo Practice
-                </button>
-                <button className="tab" onClick={createDailyChallenge} disabled={!name.trim() || loading}>
-                  📅 Daily Challenge
+            {/* Join form */}
+            {tab === "join" && (
+              <div key="join">
+                <div className="form-field">
+                  <label className="field-lbl">Your name</label>
+                  <input
+                    className="txt-input"
+                    placeholder="Enter your name…"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    maxLength={20}
+                  />
+                </div>
+                <div className="form-field">
+                  <label className="field-lbl">Room code</label>
+                  <input
+                    className="txt-input is-code"
+                    placeholder="XXXXX"
+                    value={joinCode}
+                    onChange={e => { setJoinCode(e.target.value.toUpperCase()); setJoinError(""); }}
+                    onKeyDown={e => e.key === "Enter" && !loading && name.trim() && joinCode.trim() && joinRoom()}
+                    maxLength={8}
+                  />
+                </div>
+                {joinError && <div className="err-msg">⚠ {joinError}</div>}
+                <button className="cta cta-violet" onClick={joinRoom} disabled={!name.trim() || !joinCode.trim() || loading}>
+                  {loading ? "Joining…" : "Join Room →"}
                 </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {tab === "join" && (
-            <div className="form" key="join">
-              <div className="input-group">
-                <label className="input-label">Your name</label>
-                <input
-                  className="field"
-                  placeholder="Enter your name…"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  maxLength={20}
-                />
-              </div>
-              <div className="input-group">
-                <label className="input-label">Room code</label>
-                <input
-                  className="field code-field"
-                  placeholder="XXXXX"
-                  value={joinCode}
-                  onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setJoinError(""); }}
-                  onKeyDown={(e) => e.key === "Enter" && !loading && canSubmit && joinRoom()}
-                  maxLength={5}
-                />
-              </div>
-              {joinError && <div className="error-msg">⚠ {joinError}</div>}
-              <button className="cta-btn join-btn" onClick={joinRoom} disabled={!canSubmit}>
-                {loading ? "Joining…" : "Join Room →"}
-              </button>
-            </div>
-          )}
+            <hr className="divider" />
 
-          <div className="features">
-            <div className="feature">
-              <span className="feature-icon">🌍</span>
-              <div className="feature-title">Flags</div>
-              <div className="feature-desc">150+ countries</div>
-            </div>
-            <div className="feature">
-              <span className="feature-icon">🏷️</span>
-              <div className="feature-title">Logos</div>
-              <div className="feature-desc">100+ brands</div>
-            </div>
-            <div className="feature">
-              <span className="feature-icon">⚡</span>
-              <div className="feature-title">Speed</div>
-              <div className="feature-desc">Fast = more pts</div>
-            </div>
-            <div className="feature">
-              <span className="feature-icon">🏆</span>
-              <div className="feature-title">Daily</div>
-              <div className="feature-desc">Challenge ready</div>
+            {/* Feature strip */}
+            <div className="feat-strip">
+              {[
+                { ic: "🌍", nm: "Flags",  st: "150+ countries" },
+                { ic: "🏷️", nm: "Logos",  st: "100+ brands" },
+                { ic: "⚡",  nm: "Speed",  st: "Fast = more pts" },
+                { ic: "🏆",  nm: "Daily",  st: "New challenge" },
+              ].map(f => (
+                <div key={f.nm} className="feat-item">
+                  <span className="feat-ic">{f.ic}</span>
+                  <div className="feat-nm">{f.nm}</div>
+                  <div className="feat-st">{f.st}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 }

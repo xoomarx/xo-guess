@@ -1353,29 +1353,23 @@ export default function RoomPage() {
 
   return (
     <>
-      <div className="motion-bg" aria-hidden="true">
-        <span className="bg-bar bar1" />
-        <span className="bg-bar bar2" />
-        <span className="bg-bar bar3" />
-        <span className="bg-bar bar4" />
-        <span className="bg-bar bar5" />
-        <span className="bg-bar bar6" />
-        <span className="bg-bar bar7" />
-        <span className="bg-bar bar8" />
-        <span className="bg-orb orb1" />
-        <span className="bg-orb orb2" />
+      {/* ── animated background ── */}
+      <div className="r-bg" aria-hidden="true">
+        <span className="r-orb r-orb1" />
+        <span className="r-orb r-orb2" />
+        <span className="r-orb r-orb3" />
       </div>
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         :root{
-          --bg:#050716;--surface:#0d162c;--surface2:#1a2748;--surface3:#23345e;
-          --border:rgba(255,255,255,0.10);--border-hi:rgba(255,255,255,0.18);
+          --bg:#03050f;--surface:rgba(10,14,32,0.92);--surface2:rgba(16,22,50,0.88);--surface3:rgba(26,36,72,0.9);
+          --border:rgba(255,255,255,0.09);--border-hi:rgba(255,255,255,0.17);
           --accent:#38d9ff;--accent2:#a78bfa;--danger:#fb7185;
-          --text:#f8fbff;--muted:#9aaccf;
+          --text:#eef2ff;--muted:#6b7fa8;
         }
         body{
-          background:#050716;
+          background:var(--bg);
           color:var(--text);
           font-family:'DM Sans',sans-serif;
           min-height:100vh;
@@ -1394,80 +1388,7 @@ export default function RoomPage() {
         @keyframes podium-in{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
         @keyframes crown-bounce{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-8px) rotate(8deg)}}
         @keyframes timer-warn{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-        @keyframes bgFloatA{
-          0%{transform:translate3d(0,0,0) rotate(-36deg)}
-          50%{transform:translate3d(18px,-28px,0) rotate(-36deg)}
-          100%{transform:translate3d(0,0,0) rotate(-36deg)}
-        }
-        @keyframes bgFloatB{
-          0%{transform:translate3d(0,0,0) rotate(-36deg)}
-          50%{transform:translate3d(-22px,24px,0) rotate(-36deg)}
-          100%{transform:translate3d(0,0,0) rotate(-36deg)}
-        }
-        @keyframes orbPulse{
-          0%,100%{transform:scale(1);opacity:.55}
-          50%{transform:scale(1.08);opacity:.8}
-        }
 
-        .motion-bg{
-          position:fixed;
-          inset:0;
-          overflow:hidden;
-          z-index:-1;
-          pointer-events:none;
-          background:
-            radial-gradient(circle at 20% 20%, rgba(0,188,255,0.16), transparent 26%),
-            radial-gradient(circle at 80% 18%, rgba(168,85,247,0.15), transparent 24%),
-            linear-gradient(135deg, #040713 0%, #07122d 42%, #11112d 100%);
-        }
-        .motion-bg::before{
-          content:"";
-          position:absolute;
-          inset:0;
-          background:
-            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px),
-            linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px);
-          background-size:72px 72px;
-          opacity:.22;
-        }
-        .bg-bar,.bg-orb{
-          position:absolute;
-          display:block;
-          filter:drop-shadow(0 10px 24px rgba(0,0,0,0.18));
-        }
-        .bg-bar{
-          height:54px;
-          border-radius:999px;
-          transform:rotate(-36deg);
-          opacity:.95;
-        }
-        .bar1{width:340px;left:-40px;top:70px;background:linear-gradient(90deg,#ff00d4,#8b5cf6);animation:bgFloatA 10s ease-in-out infinite;}
-        .bar2{width:420px;left:210px;top:18px;background:linear-gradient(90deg,#6d28d9,#3b82f6);animation:bgFloatB 11s ease-in-out infinite;}
-        .bar3{width:250px;right:120px;top:120px;background:linear-gradient(90deg,#a855f7,#ec4899);animation:bgFloatA 12s ease-in-out infinite;}
-        .bar4{width:420px;left:120px;top:320px;background:linear-gradient(90deg,rgba(22,53,120,.55),rgba(22,53,120,.10));height:64px;animation:bgFloatB 14s ease-in-out infinite;}
-        .bar5{width:290px;right:-40px;top:280px;background:linear-gradient(90deg,#4f46e5,#9333ea);animation:bgFloatA 13s ease-in-out infinite;}
-        .bar6{width:360px;left:-60px;bottom:160px;background:linear-gradient(90deg,#0ea5e9,#312e81);height:60px;animation:bgFloatB 15s ease-in-out infinite;}
-        .bar7{width:220px;right:260px;bottom:120px;background:linear-gradient(90deg,#d946ef,#7c3aed);animation:bgFloatA 9s ease-in-out infinite;}
-        .bar8{width:300px;right:-70px;bottom:40px;background:linear-gradient(90deg,rgba(17,41,91,.65),rgba(17,41,91,.12));height:68px;animation:bgFloatB 16s ease-in-out infinite;}
-
-        .bg-orb{
-          border-radius:999px;
-          animation:orbPulse 7s ease-in-out infinite;
-          opacity:.75;
-        }
-        .orb1{
-          width:96px;height:96px;
-          left:58%;
-          top:160px;
-          background:linear-gradient(135deg,#4f46e5,#9333ea);
-        }
-        .orb2{
-          width:88px;height:88px;
-          right:18%;
-          top:430px;
-          background:linear-gradient(135deg,#ec4899,#8b5cf6);
-          animation-delay:1.5s;
-        }
         .page-layout{position:relative;z-index:1}
 
         
@@ -1486,18 +1407,18 @@ export default function RoomPage() {
 
         /* Cards */
         .card{
-          background:linear-gradient(180deg, rgba(20,32,68,0.78), rgba(8,14,35,0.74));
-          border:1px solid rgba(255,255,255,0.13);
-          border-radius:26px;padding:24px;
-          box-shadow:0 24px 70px rgba(0,0,0,0.38),0 0 42px rgba(56,217,255,0.10);
-          backdrop-filter:blur(6px);
+          background:linear-gradient(155deg, rgba(14,19,48,0.92), rgba(6,9,25,0.92));
+          border:1px solid rgba(255,255,255,0.10);
+          border-radius:24px;padding:22px;
+          box-shadow:0 24px 70px rgba(0,0,0,0.50),0 0 0 1px rgba(255,255,255,0.03) inset;
+          backdrop-filter:blur(16px);
         }
         .card-elevated{
-          background:linear-gradient(180deg, rgba(20,32,68,0.82), rgba(8,14,35,0.80));
-          border:1px solid rgba(255,255,255,0.16);
-          border-radius:30px;padding:28px;
-          box-shadow:0 34px 90px rgba(0,0,0,0.50),0 0 54px rgba(56,217,255,0.12);
-          backdrop-filter:blur(6px);
+          background:linear-gradient(155deg, rgba(14,19,48,0.95), rgba(6,9,25,0.95));
+          border:1px solid rgba(255,255,255,0.12);
+          border-radius:28px;padding:26px;
+          box-shadow:0 34px 90px rgba(0,0,0,0.58),0 0 54px rgba(56,217,255,0.09),0 0 0 1px rgba(255,255,255,0.04) inset;
+          backdrop-filter:blur(18px);
         }
 
         /* Header */
@@ -1842,13 +1763,16 @@ export default function RoomPage() {
 
         .player-row{
           display:flex;align-items:center;gap:0;
-          padding:11px 14px;border-radius:13px;
-          background:var(--surface2);border:1px solid var(--border);
-          margin-bottom:7px;transition:all 0.3s;position:relative;overflow:visible;
+          padding:12px 14px;border-radius:14px;
+          background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.08);
+          margin-bottom:8px;transition:all 0.3s;position:relative;overflow:visible;
+        }
+        .player-row:first-child{
+          background:rgba(56,217,255,0.06);border-color:rgba(56,217,255,0.18);
         }
         .player-row.scoring{
-          background:rgba(74,240,160,0.06);border-color:rgba(74,240,160,0.25);
-          box-shadow:0 0 20px rgba(74,240,160,0.1);animation:glow-pulse 1.5s ease infinite;
+          background:rgba(74,240,160,0.08);border-color:rgba(74,240,160,0.28);
+          box-shadow:0 0 22px rgba(74,240,160,0.12);animation:glow-pulse 1.5s ease infinite;
         }
         .player-medal{font-size:14px;margin-right:10px;min-width:20px;text-align:center}
         .player-rank-num{font-size:11px;color:var(--muted);font-weight:600;margin-right:10px;min-width:20px}
@@ -1976,6 +1900,79 @@ export default function RoomPage() {
           background:rgba(74,240,160,0.1);border-color:rgba(74,240,160,0.3);
           color:var(--accent2);
         }
+
+        /* ── Stat grid (game over) ── */
+        .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
+        .stat-card{background:rgba(255,255,255,0.045);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center}
+        .stat-label{font-size:10px;text-transform:uppercase;letter-spacing:0.13em;color:var(--muted);margin-bottom:6px;font-weight:700}
+        .stat-value{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--text)}
+
+        /* ── Achievements ── */
+        .achievement-list{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 6px}
+        .achievement-chip{
+          display:inline-flex;align-items:center;gap:4px;
+          padding:5px 12px;border-radius:100px;
+          background:rgba(167,139,250,0.10);border:1px solid rgba(167,139,250,0.22);
+          font-size:12px;font-weight:700;color:var(--accent2);
+        }
+
+        /* ── Reactions ── */
+        .reaction-bar{display:flex;gap:7px;margin-top:14px;flex-wrap:wrap}
+        .reaction-btn{
+          font-size:18px;padding:7px 11px;border-radius:12px;
+          border:1px solid var(--border);background:rgba(255,255,255,0.05);
+          cursor:pointer;color:var(--text);
+          transition:transform .14s ease,background .14s ease,border-color .14s ease;
+        }
+        .reaction-btn:hover{transform:scale(1.15);background:rgba(255,255,255,0.10);border-color:var(--border-hi)}
+        .reaction-float{
+          position:fixed;bottom:80px;right:22px;
+          display:flex;flex-direction:column;gap:6px;
+          z-index:200;pointer-events:none;
+        }
+        .reaction-pill{
+          display:inline-flex;align-items:center;gap:7px;
+          background:rgba(8,12,30,0.90);border:1px solid rgba(255,255,255,0.14);
+          padding:7px 14px;border-radius:100px;font-size:13px;font-weight:700;
+          backdrop-filter:blur(12px);
+          animation:fadeUp 0.3s ease both;
+        }
+
+        /* ── Rematch box ── */
+        .rematch-box{
+          display:flex;align-items:center;justify-content:space-between;gap:12px;
+          margin-top:16px;padding:14px 16px;border-radius:16px;
+          background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.20);
+        }
+        .rematch-bar{
+          height:4px;border-radius:100px;background:rgba(255,255,255,0.08);
+          margin-top:6px;overflow:hidden;
+        }
+        .rematch-fill{
+          height:100%;border-radius:100px;
+          background:linear-gradient(90deg,var(--accent2),var(--accent));
+          transition:width 0.4s ease;
+        }
+
+        /* ── Background orbs ── */
+        .r-bg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;
+          background:
+            radial-gradient(ellipse 70% 45% at 20% 10%, rgba(56,217,255,0.13), transparent),
+            radial-gradient(ellipse 60% 45% at 85% 15%, rgba(167,139,250,0.13), transparent),
+            linear-gradient(160deg,#040610 0%,#070f28 45%,#0d1130 100%);
+        }
+        .r-bg::before{
+          content:'';position:absolute;inset:0;
+          background:
+            linear-gradient(90deg,rgba(255,255,255,0.016) 1px,transparent 1px),
+            linear-gradient(rgba(255,255,255,0.016) 1px,transparent 1px);
+          background-size:60px 60px;opacity:0.5;
+        }
+        .r-orb{position:absolute;border-radius:50%;filter:blur(64px);pointer-events:none}
+        .r-orb1{width:480px;height:480px;top:-100px;right:-80px;background:radial-gradient(circle,rgba(99,102,241,0.18),transparent 70%);animation:orbFloat 20s ease-in-out infinite}
+        .r-orb2{width:380px;height:380px;bottom:-80px;left:-60px;background:radial-gradient(circle,rgba(56,217,255,0.12),transparent 70%);animation:orbFloat 26s ease-in-out infinite reverse}
+        .r-orb3{width:260px;height:260px;top:45%;left:42%;background:radial-gradient(circle,rgba(250,204,21,0.07),transparent 70%);animation:orbFloat 18s ease-in-out infinite;animation-delay:-6s}
+        @keyframes orbFloat{0%,100%{transform:translate(0,0)}33%{transform:translate(16px,-20px)}66%{transform:translate(-18px,14px)}}
       `}</style>
 
       <div className="page-layout">
@@ -2004,32 +2001,27 @@ export default function RoomPage() {
                 <button className="btn btn-ghost" onClick={copyInvite}>
                   {copied ? "✓ Copied!" : "🔗 Invite"}
                 </button>
-                <button
-                  className={`btn btn-ghost ${soundEnabled ? "btn-sound-on" : ""}`}
-                  onClick={enableSound}
-                >
-                  {soundEnabled ? "🔊 Sound on" : "🔇 Sound off"}
-                </button>
-                <button
-                  className="btn btn-ghost"
-                  onClick={() => playSound("correct")}
-                  title="Test sound"
-                >
-                  Test sound
-                </button>
-                <button className="btn btn-ghost" onClick={() => setMuted((value) => !value)}>
-                  {muted ? "🔇 Muted" : "🔈 SFX"}
-                </button>
-                <input
-                  aria-label="Volume"
-                  className="volume-slider"
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={volume}
-                  onChange={(e) => setVolume(Number(e.target.value))}
-                />
+                {!soundEnabled ? (
+                  <button className="btn btn-ghost" onClick={enableSound}>
+                    🔇 Enable Sound
+                  </button>
+                ) : (
+                  <>
+                    <button className="btn btn-ghost btn-sound-on" onClick={() => setMuted(v => !v)} title="Toggle mute">
+                      {muted ? "🔇 Muted" : "🔊 Sound"}
+                    </button>
+                    <button className="btn btn-ghost" onClick={toggleMusic} title="Toggle music">
+                      {musicEnabled ? "🎵 Music" : "🎵 Off"}
+                    </button>
+                    <input
+                      aria-label="Volume"
+                      className="volume-slider"
+                      type="range" min="0" max="1" step="0.05"
+                      value={volume}
+                      onChange={(e) => setVolume(Number(e.target.value))}
+                    />
+                  </>
+                )}
               </div>
             </div>
 
@@ -2313,9 +2305,37 @@ export default function RoomPage() {
                 </div>
               )}
 
+              {/* ── Power-ups bar ── */}
+              {!isSpectator && !isReveal && (
+                <div className="powerup-bar">
+                  {[
+                    { id: "time",   emoji: "⏱️", label: "+3s",    tip: "Add 3 seconds" },
+                    { id: "hint",   emoji: "💡", label: "Hint",   tip: "Reveal first letter" },
+                    { id: "shield", emoji: "🛡️", label: "Shield", tip: "Block next wrong answer" },
+                    { id: "double", emoji: "⚡", label: "2×",     tip: "Double next correct" },
+                  ].map((pu) => {
+                    const used = !!room.players?.[uid]?.powerUps?.[pu.id];
+                    return (
+                      <button
+                        key={pu.id}
+                        className="powerup-btn"
+                        title={pu.tip}
+                        disabled={used || !!alreadyAnswered || timeLeft === 0}
+                        onClick={() => usePowerUp(pu.id as "time" | "hint" | "shield" | "double")}
+                        style={used ? { opacity: 0.35 } : {}}
+                      >
+                        <span style={{ fontSize: 18, display: "block" }}>{pu.emoji}</span>
+                        <span style={{ fontSize: 10, fontWeight: 800 }}>{used ? "Used" : pu.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ── Reactions ── */}
               <div className="reaction-bar">
-                {["😂", "🔥", "😡", "GG"].map((emoji) => (
-                  <button key={emoji} className="btn btn-ghost reaction-btn" onClick={() => sendReaction(emoji)}>
+                {["😂", "🔥", "😡", "💀", "GG"].map((emoji) => (
+                  <button key={emoji} className="reaction-btn" onClick={() => sendReaction(emoji)}>
                     {emoji}
                   </button>
                 ))}
@@ -2344,27 +2364,33 @@ export default function RoomPage() {
 
               {/* Podium */}
               <div className="podium">
-                {/* 2nd */}
                 {sortedPlayers[1] && (
-                  <div className="podium-col">
+                  <div className="podium-col" style={{ animationDelay: "0.25s" }}>
+                    <div className="avatar-badge" style={{ width:44,height:44,display:"inline-grid",placeItems:"center",borderRadius:"50%",marginBottom:6,background:"rgba(255,255,255,0.08)",border:"2px solid rgba(160,176,200,0.4)" }}>
+                      <img src={sortedPlayers[1].avatar || pickAvatar(sortedPlayers[1].name)} alt="" style={{ width:"100%",height:"100%",borderRadius:"50%",objectFit:"cover" }} />
+                    </div>
                     <div className="podium-name">{sortedPlayers[1].name}</div>
-                    <div className="podium-score">{sortedPlayers[1].score}</div>
+                    <div className="podium-score">{sortedPlayers[1].score} pts</div>
                     <div className="podium-block p2">🥈</div>
                   </div>
                 )}
-                {/* 1st */}
                 {sortedPlayers[0] && (
-                  <div className="podium-col">
-                    <div className="podium-name">{sortedPlayers[0].name}</div>
-                    <div className="podium-score">{sortedPlayers[0].score}</div>
+                  <div className="podium-col" style={{ animationDelay: "0.1s" }}>
+                    <div className="avatar-badge" style={{ width:54,height:54,display:"inline-grid",placeItems:"center",borderRadius:"50%",marginBottom:6,background:"rgba(240,192,64,0.12)",border:"2px solid rgba(240,192,64,0.5)" }}>
+                      <img src={sortedPlayers[0].avatar || pickAvatar(sortedPlayers[0].name)} alt="" style={{ width:"100%",height:"100%",borderRadius:"50%",objectFit:"cover" }} />
+                    </div>
+                    <div className="podium-name" style={{ fontWeight: 900, color: "var(--text)" }}>{sortedPlayers[0].name}</div>
+                    <div className="podium-score" style={{ color: "#f0c040" }}>{sortedPlayers[0].score} pts</div>
                     <div className="podium-block p1">🥇</div>
                   </div>
                 )}
-                {/* 3rd */}
                 {sortedPlayers[2] && (
-                  <div className="podium-col">
+                  <div className="podium-col" style={{ animationDelay: "0.4s" }}>
+                    <div className="avatar-badge" style={{ width:40,height:40,display:"inline-grid",placeItems:"center",borderRadius:"50%",marginBottom:6,background:"rgba(200,128,96,0.12)",border:"2px solid rgba(200,128,96,0.35)" }}>
+                      <img src={sortedPlayers[2].avatar || pickAvatar(sortedPlayers[2].name)} alt="" style={{ width:"100%",height:"100%",borderRadius:"50%",objectFit:"cover" }} />
+                    </div>
                     <div className="podium-name">{sortedPlayers[2].name}</div>
-                    <div className="podium-score">{sortedPlayers[2].score}</div>
+                    <div className="podium-score">{sortedPlayers[2].score} pts</div>
                     <div className="podium-block p3">🥉</div>
                   </div>
                 )}
@@ -2399,44 +2425,64 @@ export default function RoomPage() {
                 </div>
               )}
 
+              {/* Winner round history */}
               {sortedPlayers[0]?.history && (
                 <div className="history-list">
-                  <div className="sidebar-title">Winner history</div>
-                  {Object.values(sortedPlayers[0].history || {}).slice(-5).map((item) => (
+                  <div className="sidebar-title" style={{ marginTop: 16 }}>🏆 Winner&apos;s round history</div>
+                  {Object.values(sortedPlayers[0].history || {}).slice(-8).map((item) => (
                     <div key={item.round} className="history-row">
-                      <span>{item.correct ? "✅" : "❌"} R{item.round}: {item.correctAnswer}</span>
-                      <strong>{item.correct ? `+${item.points}` : "+0"}</strong>
+                      <span>{item.correct ? "✅" : "❌"} Round {item.round}: <strong style={{ color: "var(--text)" }}>{item.correctAnswer}</strong></span>
+                      <strong style={{ color: item.correct ? "var(--accent2)" : "var(--muted)" }}>
+                        {item.correct ? `+${item.points}` : "+0"}
+                      </strong>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Rest of players */}
-              {sortedPlayers.slice(3).map((p, i) => (
-                <div key={p.name} style={{ fontSize:13,color:"var(--muted)",marginBottom:4 }}>
-                  #{i + 4} {p.name} — {p.score} pts
-                </div>
-              ))}
-
-              {sortedPlayers[0]?.history && (
-                <div className="history-list">
-                  <div className="sidebar-title">Winner history</div>
-                  {Object.values(sortedPlayers[0].history || {}).slice(-5).map((item) => (
-                    <div key={item.round} className="history-row">
-                      <span>{item.correct ? "✅" : "❌"} R{item.round}: {item.correctAnswer}</span>
-                      <strong>{item.correct ? `+${item.points}` : "+0"}</strong>
+              {/* Rest of players (4th place and below) */}
+              {sortedPlayers.slice(3).length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <div className="sidebar-title">Other players</div>
+                  {sortedPlayers.slice(3).map((p, i) => (
+                    <div key={p.name} style={{ display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid var(--border)",fontSize:13,color:"var(--muted)" }}>
+                      <span className="avatar-badge" style={{ borderColor: p.color || "rgba(255,255,255,0.12)" }}>
+                        <img src={p.avatar || pickAvatar(p.name)} alt={p.name} />
+                      </span>
+                      <span style={{ flex:1 }}>#{i + 4} {p.name}</span>
+                      <strong style={{ fontFamily:"'Syne',sans-serif",color:"var(--accent)" }}>{p.score} pts</strong>
                     </div>
                   ))}
                 </div>
               )}
+
+              {/* ── Rematch voting ── */}
+              <div className="rematch-box">
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14 }}>🔄 Play Again?</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
+                    {rematchCount} / {rematchNeeded} votes needed
+                  </div>
+                  <div className="rematch-bar" style={{ marginTop: 8 }}>
+                    <div className="rematch-fill" style={{ width: `${Math.min(100, (rematchCount / Math.max(rematchNeeded, 1)) * 100)}%` }} />
+                  </div>
+                </div>
+                {uid && !room.rematchVotes?.[uid] ? (
+                  <button className="btn btn-ghost" onClick={voteRematch} style={{ whiteSpace: "nowrap" }}>
+                    Vote Rematch
+                  </button>
+                ) : uid && room.rematchVotes?.[uid] ? (
+                  <span style={{ fontSize: 12, color: "var(--accent2)", fontWeight: 800 }}>✓ Voted</span>
+                ) : null}
+              </div>
 
               {isHost && (
                 <button
                   className="btn btn-green"
                   onClick={startGame}
-                  style={{ margin:"24px auto 0",display:"block",padding:"12px 32px",fontSize:15 }}
+                  style={{ margin:"20px auto 0",display:"block",padding:"14px 36px",fontSize:15 }}
                 >
-                  ▶ Play Again
+                  ▶ Start New Game
                 </button>
               )}
             </div>
